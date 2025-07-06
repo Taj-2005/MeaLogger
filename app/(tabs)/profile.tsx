@@ -59,7 +59,7 @@ export default function LogoutComponent() {
 
   return (
     <View className='flex flex-col min-h-screen justify-center items-center'>
-      <View className='px-16 py-10 bg-white rounded-lg shadow-lg'>
+      <View className='px-10 py-10 bg-white rounded-lg shadow-lg'>
         <Text className='text-xl font-bold text-gray-800 mb-4'>Account Information</Text>
         
         {/* User Info */}

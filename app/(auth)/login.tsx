@@ -230,7 +230,7 @@ export default function LoginScreen() {
 
   return (
     <View className='flex flex-col justify-center items-center min-h-screen bg-gray-100'>
-      <View className='flex flex-col justify-center items-center border-2 border-white gap-2 rounded-xl px-16 py-10 bg-white shadow-lg'>
+      <View className='flex flex-col justify-center items-center border-2 border-white gap-2 rounded-xl px-10 py-10 bg-white shadow-lg'>
         <Text className='text-2xl font-bold pb-4 text-gray-800'>Login</Text>
         
         <View className='flex flex-col justify-center items-center gap-3'>

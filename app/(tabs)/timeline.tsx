@@ -15,18 +15,31 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { fetchMealsFromFirestore } from '../../firebaseHelpers';
 
 const { width } = Dimensions.get('window');
 
+const placeholderImages = [
+  'https://source.unsplash.com/400x300/?food',
+  'https://source.unsplash.com/400x300/?meal',
+  'https://source.unsplash.com/400x300/?lunch',
+  'https://source.unsplash.com/400x300/?dinner',
+  'https://source.unsplash.com/400x300/?breakfast',
+];
+
 export default function TimelineScreen() {
   const router = useRouter();
-  const [meals, setMeals] = useState<Array<{ id: string; title: string; mealType: string; date: string; timestamp: string; imageUri?: string; calories?: number }>>([]);
+  const [meals, setMeals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
 
-  // Load meals when screen comes into focus
+  const getRandomPlaceholder = () => {
+    const index = Math.floor(Math.random() * placeholderImages.length);
+    return placeholderImages[index];
+  };
+
   useFocusEffect(
     useCallback(() => {
       loadMeals();
@@ -35,46 +48,47 @@ export default function TimelineScreen() {
 
   const loadMeals = async () => {
     try {
-      const storedMeals = await AsyncStorage.getItem('meals');
-      if (storedMeals) {
-        const parsedMeals = JSON.parse(storedMeals);
-        
-        // Verify image files exist and update paths if needed
-        const verifiedMeals = await Promise.all(
-          parsedMeals.map(async (meal: { imageUri: string; }) => {
-            if (meal.imageUri) {
-              try {
-                const fileInfo = await FileSystem.getInfoAsync(meal.imageUri);
-                if (!fileInfo.exists) {
-                  // Image file doesn't exist, remove imageUri
-                  return { ...meal, imageUri: null };
-                }
-              } catch (error) {
-                console.error('Error checking image file:', error);
-                return { ...meal, imageUri: null };
-              }
+      setIsLoading(true);
+
+      // Fetch details from Firestore
+      const firestoreMeals = await fetchMealsFromFirestore();
+
+      // Attach local image from AsyncStorage (if available)
+      const enrichedMeals = await Promise.all(
+        firestoreMeals.map(async (meal) => {
+          let localUri = await AsyncStorage.getItem(`meal_image_${meal.id}`);
+          if (localUri) {
+            try {
+              const fileInfo = await FileSystem.getInfoAsync(localUri);
+              if (!fileInfo.exists) localUri = null;
+            } catch {
+              localUri = null;
             }
-            return meal;
-          })
-        );
-        
-        setMeals(verifiedMeals);
-      }
+          }
+
+          return {
+            ...meal,
+            imageUri: localUri ?? getRandomPlaceholder(),
+          };
+        })
+      );
+
+      setMeals(enrichedMeals);
     } catch (error) {
       console.error('Error loading meals:', error);
-      Alert.alert('Error', 'Failed to load meals');
+      Alert.alert('Error', 'Failed to load meals from Firestore');
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
     await loadMeals();
-    setRefreshing(false);
   };
 
-  const formatDate = (dateString: string | number | Date) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
@@ -84,7 +98,7 @@ export default function TimelineScreen() {
     });
   };
 
-  const formatTime = (timestamp: string | number | Date) => {
+  const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -105,20 +119,17 @@ export default function TimelineScreen() {
   const deleteMeal = async (mealId: string) => {
     try {
       const updatedMeals = meals.filter(meal => meal.id !== mealId);
-      await AsyncStorage.setItem('meals', JSON.stringify(updatedMeals));
       setMeals(updatedMeals);
-      
-      // Haptic feedback
+
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
-      Alert.alert('Success', 'Meal deleted successfully');
+      Alert.alert('Deleted', 'Meal removed from timeline');
     } catch (error) {
       console.error('Error deleting meal:', error);
       Alert.alert('Error', 'Failed to delete meal');
     }
   };
 
-  const handleDeleteMeal = (meal: { title: any; id: string; }) => {
+  const handleDeleteMeal = (meal: { title: string; id: string; }) => {
     Alert.alert(
       'Delete Meal',
       `Are you sure you want to delete "${meal.title}"?`,
@@ -134,11 +145,11 @@ export default function TimelineScreen() {
   };
 
   const openImageModal = (imageUri: string | null) => {
-      setSelectedImage(imageUri);
-      setShowImageModal(true);
+    setSelectedImage(imageUri);
+    setShowImageModal(true);
   };
 
-  const renderMealItem = ({ item }: { item: { id: string; title: string; mealType: string; date: string; timestamp: string; imageUri?: string; calories?: number } }) => (
+  const renderMealItem = ({ item }: { item: any }) => (
     <View className='bg-white rounded-xl p-4 mb-4 shadow-sm'>
       <View className='flex-row justify-between items-start mb-3'>
         <View className='flex-1'>
@@ -151,10 +162,9 @@ export default function TimelineScreen() {
           <Text className='text-xs text-gray-400'>{formatTime(item.timestamp)}</Text>
         </View>
         
-        {/* Thumbnail Image */}
         {item.imageUri && (
           <TouchableOpacity
-            onPress={() => openImageModal(item.imageUri ?? null)}
+            onPress={() => openImageModal(item.imageUri)}
             className='ml-3'
           >
             <Image
@@ -166,7 +176,6 @@ export default function TimelineScreen() {
         )}
       </View>
       
-      {/* Calories */}
       {item.calories && (
         <View className='bg-blue-100 rounded-lg p-2 mb-3'>
           <Text className='text-blue-800 font-medium text-center'>
@@ -175,7 +184,6 @@ export default function TimelineScreen() {
         </View>
       )}
       
-      {/* Actions */}
       <View className='flex-row justify-end space-x-2'>
         <TouchableOpacity
           onPress={() => handleDeleteMeal(item)}
@@ -214,9 +222,8 @@ export default function TimelineScreen() {
 
   return (
     <View className='flex-1 bg-gray-100'>
-      {/* Header */}
       <View className='bg-white pt-12 pb-4 px-4 shadow-sm'>
-        <View className='flex-row justify-between items-center'>
+        <View className='flex-row justify-between items-center mt-10'>
           <Text className='text-2xl font-bold text-gray-800'>My Meals</Text>
           <TouchableOpacity
             onPress={() => router.push('./meal-logging')}
@@ -225,8 +232,6 @@ export default function TimelineScreen() {
             <Text className='text-white font-semibold'>+ Add Meal</Text>
           </TouchableOpacity>
         </View>
-        
-        {/* Stats */}
         <View className='flex-row justify-between mt-4'>
           <View className='bg-gray-100 rounded-lg p-3 flex-1 mr-2'>
             <Text className='text-2xl font-bold text-gray-800'>{meals.length}</Text>
@@ -241,7 +246,6 @@ export default function TimelineScreen() {
         </View>
       </View>
 
-      {/* Meals List */}
       <FlatList
         data={meals}
         renderItem={renderMealItem}
@@ -254,7 +258,6 @@ export default function TimelineScreen() {
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Image Modal */}
       <Modal
         visible={showImageModal}
         transparent={true}
