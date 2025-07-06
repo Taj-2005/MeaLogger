@@ -20,7 +20,15 @@ import { fetchMealsFromFirestore } from '../../firebaseHelpers';
 import { doc, deleteDoc } from 'firebase/firestore';
 
 const { width } = Dimensions.get('window');
-
+type Meal = {
+  id: string;
+  imageUri: string;
+  timestamp: string;
+  date?: string;
+  title?: string;
+  mealType?: string;
+  calories?: number;
+};
 function getRandomPlaceholder() {
   const placeholders = [
     'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?q=80&w=2970&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
@@ -33,7 +41,7 @@ function getRandomPlaceholder() {
 
 export default function TimelineScreen() {
   const router = useRouter();
-  const [meals, setMeals] = useState<any[]>([]);
+  const [meals, setMeals] = useState<Meal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -45,40 +53,46 @@ export default function TimelineScreen() {
     }, [])
   );
 
-  const loadMeals = async () => {
-    try {
-      setIsLoading(true);
+const loadMeals = async () => {
+  try {
+    setIsLoading(true);
 
-      const userEmail = auth.currentUser?.email ?? 'guest@example.com';
-      const firestoreMeals = await fetchMealsFromFirestore(userEmail);
+    const userEmail = auth.currentUser?.email ?? 'guest@example.com';
+    const firestoreMeals = await fetchMealsFromFirestore(userEmail);
 
-      const enrichedMeals = await Promise.all(
-        firestoreMeals.map(async (meal) => {
-          let localUri = await AsyncStorage.getItem(`meal_image_${meal.id}`);
-          if (localUri) {
-            try {
-              const fileInfo = await FileSystem.getInfoAsync(localUri);
-              if (!fileInfo.exists) localUri = null;
-            } catch {
-              localUri = null;
-            }
+    const enrichedMeals: Meal[] = await Promise.all(
+      firestoreMeals.map(async (meal) => {
+        let localUri = await AsyncStorage.getItem(`meal_image_${meal.id}`);
+        if (localUri) {
+          try {
+            const fileInfo = await FileSystem.getInfoAsync(localUri);
+            if (!fileInfo.exists) localUri = null;
+          } catch {
+            localUri = null;
           }
-          return {
-            ...meal,
-            imageUri: localUri ?? getRandomPlaceholder(),
-          };
-        })
-      );
+        }
+        return {
+          ...meal,
+          imageUri: localUri ?? getRandomPlaceholder(),
+        } as Meal;
+      })
+    );
 
-      setMeals(enrichedMeals);
-    } catch (error) {
-      console.error('Error loading meals:', error);
-      Alert.alert('Error', 'Failed to load meals');
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  };
+    enrichedMeals.sort((a, b) => {
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    });
+
+    setMeals(enrichedMeals);
+  } catch (error) {
+    console.error('Error loading meals:', error);
+    Alert.alert('Error', 'Failed to load meals');
+  } finally {
+    setIsLoading(false);
+    setRefreshing(false);
+  }
+};
+
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -163,7 +177,6 @@ export default function TimelineScreen() {
           </View>
           <Text className='text-sm text-gray-600 capitalize'>{item.mealType}</Text>
           <Text className='text-sm text-gray-500'>{formatDate(item.date)}</Text>
-          <Text className='text-xs text-gray-400'>{formatTime(item.timestamp)}</Text>
         </View>
         <TouchableOpacity
           onPress={() => openImageModal(item.imageUri)}
