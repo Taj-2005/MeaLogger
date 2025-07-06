@@ -10,6 +10,7 @@ import {
   ScrollView, 
   Dimensions 
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { Picker } from '@react-native-picker/picker';
@@ -122,7 +123,10 @@ export default function MealLoggingScreen() {
               resizeMode="cover"
             />
           ) : (
-            <Text className='text-gray-500'>Tap to take photo</Text>
+            <View className='flex flex-col justify-center items-center'>
+              <Ionicons name="camera-outline" size={30} color="#000" />
+              <Text className=' text-gray-500'>Tap to take photo</Text>
+            </View>
           )}
         </TouchableOpacity>
 

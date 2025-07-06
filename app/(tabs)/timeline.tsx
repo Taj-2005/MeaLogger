@@ -15,17 +15,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { auth } from '../../firebaseConfig';
+import { auth,db } from '../../firebaseConfig';
 import { fetchMealsFromFirestore } from '../../firebaseHelpers';
+import { doc, deleteDoc } from 'firebase/firestore';
 
 const { width } = Dimensions.get('window');
 
 function getRandomPlaceholder() {
   const placeholders = [
-    'https://source.unsplash.com/400x400/?food',
-    'https://source.unsplash.com/400x400/?meal',
-    'https://source.unsplash.com/400x400/?lunch',
-    'https://source.unsplash.com/400x400/?dinner'
+    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?q=80&w=2970&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1180&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    'https://images.unsplash.com/photo-1576867757603-05b134ebc379?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    'https://images.unsplash.com/photo-1605926637512-c8b131444a4b?q=80&w=1180&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
   ];
   return placeholders[Math.floor(Math.random() * placeholders.length)];
 }
@@ -112,19 +113,25 @@ export default function TimelineScreen() {
     }
   };
 
-  const deleteMeal = async (mealId: string) => {
+    const deleteMeal = async (mealId: string) => {
     try {
-      const updatedMeals = meals.filter(meal => meal.id !== mealId);
-      await AsyncStorage.removeItem(`meal_image_${mealId}`);
-      await AsyncStorage.setItem('meals', JSON.stringify(updatedMeals));
-      setMeals(updatedMeals);
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      Alert.alert('Success', 'Meal deleted successfully');
+        // Delete from Firestore
+        await deleteDoc(doc(db, 'meals', mealId));
+
+        // Delete image uri from AsyncStorage if exists
+        await AsyncStorage.removeItem(`meal_image_${mealId}`);
+
+        // Remove from local state
+        const updatedMeals = meals.filter(meal => meal.id !== mealId);
+        setMeals(updatedMeals);
+
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Alert.alert('Success', 'Meal deleted successfully');
     } catch (error) {
-      console.error('Error deleting meal:', error);
-      Alert.alert('Error', 'Failed to delete meal');
+        console.error('Error deleting meal:', error);
+        Alert.alert('Error', 'Failed to delete meal');
     }
-  };
+    };
 
   const handleDeleteMeal = (meal: { title: any; id: string; }) => {
     Alert.alert(
