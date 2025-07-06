@@ -1,5 +1,5 @@
 import { Slot, useRouter, useSegments } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import './global.css';
@@ -13,34 +13,33 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const segments = useSegments();
   const router = useRouter();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isLoading) {
       const inAuthGroup = segments[0] === '(auth)';
       const inTabsGroup = segments[0] === '(tabs)';
 
       if (!isAuthenticated && inTabsGroup) {
-        // Redirect to login if not authenticated and trying to access protected routes
+        // Not logged in, trying to access protected routes
         router.replace('/(auth)/login');
       } else if (isAuthenticated && inAuthGroup) {
-        // Redirect to main app if authenticated and on auth screens
+        // Logged in, trying to access auth routes
         router.replace('/(tabs)');
       }
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isLoading, segments, router]);
 
   if (isLoading) {
     return (
-      <View className='flex-1 justify-center items-center bg-gray-100'>
+      <View className="flex-1 justify-center items-center bg-gray-100">
         <ActivityIndicator size="large" color="#2563eb" />
-        <Text className='mt-4 text-gray-600'>Loading...</Text>
+        <Text className="mt-4 text-gray-600">Loading...</Text>
       </View>
     );
   }
 
-  return children;
+  return <>{children}</>;
 };
 
-// Main App Layout
 export default function RootLayout() {
   return (
     <AuthProvider>

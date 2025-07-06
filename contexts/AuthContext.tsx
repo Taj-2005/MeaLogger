@@ -1,106 +1,144 @@
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  User,
+} from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth } from '../firebaseConfig';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  getUserSession: () => Promise<any>;
-}
-
-interface AuthProviderProps {
-  children: React.ReactNode;
+  updateName: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = (): AuthContextType => {
+export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
-};
+}
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const auth = getAuth();
+
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Restore remembered session
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUser(user);
-        setIsAuthenticated(true);
-        
-        // Update session data if remember me is enabled
-        try {
-          const rememberMeStatus = await AsyncStorage.getItem('rememberMe');
-          if (rememberMeStatus === 'true') {
-            const sessionData = {
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName,
-              loginTime: new Date().toISOString(),
-            };
-            await AsyncStorage.setItem('userSession', JSON.stringify(sessionData));
+    const restoreSession = async () => {
+      setIsLoading(true);
+      try {
+        const remember = await AsyncStorage.getItem('rememberMe');
+        if (remember === 'true') {
+          const email = await AsyncStorage.getItem('storedEmail');
+          const password = await AsyncStorage.getItem('storedPassword');
+
+          if (email && password) {
+            await signInWithEmailAndPassword(auth, email, password);
+            console.log('Auto-login from AsyncStorage');
           }
-        } catch (error) {
-          console.error('Error updating session:', error);
         }
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-        
-        // Clear session data on logout
-        try {
-          await AsyncStorage.removeItem('userSession');
-          await AsyncStorage.removeItem('rememberMe');
-        } catch (error) {
-          console.error('Error clearing session:', error);
-        }
+      } catch (error) {
+        console.error('Error restoring session:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
+    };
+
+    restoreSession();
+
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
     });
 
     return unsubscribe;
-  }, []);
+  }, [auth]);
 
-  const logout = async (): Promise<void> => {
+  const login = async (email: string, password: string, rememberMe: boolean = false) => {
+    setIsLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+
+      if (rememberMe) {
+        await AsyncStorage.setItem('rememberMe', 'true');
+        await AsyncStorage.setItem('storedEmail', email);
+        await AsyncStorage.setItem('storedPassword', password);
+      } else {
+        await clearStoredCredentials();
+      }
+
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (name: string, email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, { displayName: name });
+        setUser({ ...auth.currentUser });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setIsLoading(true);
     try {
       await signOut(auth);
-      await AsyncStorage.removeItem('userSession');
-      await AsyncStorage.removeItem('rememberMe');
-    } catch (error) {
-      console.error('Error logging out:', error);
-      throw error;
+      await clearStoredCredentials();
+      setUser(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getUserSession = async (): Promise<any> => {
+  const updateName = async (name: string) => {
+    if (!auth.currentUser) throw new Error('No user logged in');
+    setIsLoading(true);
     try {
-      const sessionData = await AsyncStorage.getItem('userSession');
-      return sessionData ? JSON.parse(sessionData) : null;
-    } catch (error) {
-      console.error('Error getting user session:', error);
-      return null;
+      await updateProfile(auth.currentUser, { displayName: name });
+      setUser({ ...auth.currentUser });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const value: AuthContextType = {
-    user,
-    isAuthenticated,
-    isLoading,
-    logout,
-    getUserSession,
+  const clearStoredCredentials = async () => {
+    await AsyncStorage.multiRemove(['rememberMe', 'storedEmail', 'storedPassword']);
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        register,
+        logout,
+        updateName,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
-};
+}
