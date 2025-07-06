@@ -4,7 +4,7 @@
     "slug": "meal-logger-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "/assets/logo.jpeg",
+    "icon": "./assets/logo.jpeg",
     "scheme": "Meal Logger",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,7 +14,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "/assets/logo.jpeg",
+        "foregroundImage": "./assets/logo.jpeg",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -23,14 +23,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "/assets/logo.jpeg"
+      "favicon": "./assets/logo.jpeg"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "/assets/logo.jpeg",
+          "image": "./assets/logo.jpeg",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
