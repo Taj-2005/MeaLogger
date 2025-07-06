@@ -64,6 +64,8 @@ export default function LogoutComponent() {
         
         {/* User Info */}
         <View className='bg-gray-50 rounded-lg p-4 mb-4'>
+          <Text className='text-sm text-gray-600 mb-1'>Name:</Text>
+          <Text className='text-base font-medium text-gray-800 mb-3'>{user?.displayName}</Text>
           <Text className='text-sm text-gray-600 mb-1'>Email:</Text>
           <Text className='text-base font-medium text-gray-800 mb-3'>{user?.email}</Text>
           

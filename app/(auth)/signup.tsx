@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
 import { useRouter } from 'expo-router';
 import { Link } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,6 +8,7 @@ import { auth } from '../../firebaseConfig';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,6 +25,10 @@ export default function RegisterScreen() {
   };
 
   const validateInputs = () => {
+    if (!name.trim()) {
+      setError('Name is required');
+      return false;
+    }
     if (!email.trim()) {
       setError('Email is required');
       return false;
@@ -73,6 +78,13 @@ export default function RegisterScreen() {
     try {
       // Create user account
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      // Update profile with displayName
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, {
+          displayName: name,
+        });
+      }
       
       // Important: Sign out the user immediately after registration
       // This prevents automatic login and redirect to the app
@@ -130,6 +142,7 @@ export default function RegisterScreen() {
   };
 
   const clearForm = () => {
+    setName('');
     setEmail('');
     setPassword('');
     setConfirmPassword('');
@@ -143,6 +156,21 @@ export default function RegisterScreen() {
         <Text className='text-2xl font-bold pb-4 text-gray-800'>Sign Up</Text>
         
         <View className='flex flex-col justify-center items-center gap-3'>
+
+          {/* Name Input */}
+          <View className='border-2 rounded-xl w-72 border-gray-200 px-3'>
+            <TextInput 
+              placeholder="Name" 
+              value={name} 
+              onChangeText={(text) => {
+                setName(text);
+                setError('');
+              }}
+              autoCapitalize="words"
+              autoCorrect={false}
+            />
+          </View>
+
           {/* Email Input */}
           <View className='border-2 rounded-xl w-72 border-gray-200 px-3'>
             <TextInput 
