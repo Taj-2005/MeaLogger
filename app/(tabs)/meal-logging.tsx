@@ -1,10 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, Image, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  Alert, 
+  Image, 
+  ActivityIndicator, 
+  ScrollView, 
+  Dimensions 
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { auth } from '../../firebaseConfig';
 import { saveMealToFirestore } from '../../firebaseHelpers';
 
 const { width } = Dimensions.get('window');
@@ -48,19 +59,29 @@ export default function MealLoggingScreen() {
 
     try {
       const mealId = Date.now().toString();
+      const userEmail = auth.currentUser?.email ?? 'guest@example.com';
 
-      // Save meal details in Firestore
       const mealData = {
+        id: mealId,
         title,
         mealType,
         date,
         calories: calories ? parseInt(calories) : undefined,
         timestamp: new Date().toISOString(),
+        userEmail,
       };
+
+      // ✅ Save to Firestore with userEmail
       await saveMealToFirestore(mealId, mealData);
 
-      // Save local image URI in AsyncStorage by mealId
+      // ✅ Save local image path
       await AsyncStorage.setItem(`meal_image_${mealId}`, capturedImage);
+
+      // ✅ Also keep local cache for offline
+      const existingMeals = await AsyncStorage.getItem('meals');
+      const meals = existingMeals ? JSON.parse(existingMeals) : [];
+      meals.unshift({ ...mealData, imageUri: capturedImage });
+      await AsyncStorage.setItem('meals', JSON.stringify(meals));
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Success', 'Meal logged successfully!', [
