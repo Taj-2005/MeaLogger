@@ -201,7 +201,7 @@ export default function Index() {
       {/* Actions */}
       <View style={{ maxWidth: 400, width: "100%", gap: 16 }}>
         <Link
-          href="/addMeal"
+          href="/meal-logging"
           style={{
             backgroundColor: "#2563eb",
             paddingVertical: 14,
