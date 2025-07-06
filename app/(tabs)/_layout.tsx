@@ -38,6 +38,15 @@ const RootLayout = () => {
           ),
         }}
       />
+        <Tabs.Screen
+          name="remainder"
+          options={{
+            title: "Remainder",
+            tabBarIcon: ({ color, size }) => (
+              <MaterialIcons name="restaurant-menu" size={size} color={color} />
+            ),
+          }}
+        />
       <Tabs.Screen
         name="profile"
         options={{
