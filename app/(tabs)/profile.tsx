@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { updateProfile, updateEmail, sendPasswordResetEmail, getAuth } from 'firebase/auth';
+import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import SettingsButton from '../components/SettingsBtn';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -240,51 +241,58 @@ export default function Profile() {
             ) : null}
 
             {/* Buttons */}
-            <TouchableOpacity
-              disabled={!changed || loading}
-              onPress={handleUpdateProfile}
-              className={`w-full rounded-md py-3 mb-3 ${
-                !changed || loading ? 'opacity-60' : ''
-              }`}
-              style={{
-                backgroundColor: !changed || loading ? colors.border : colors.accent,
-              }}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color={colors.textPrimary} />
-              ) : (
-                <Text className="text-white text-center font-semibold">
-                  Update Profile
-                </Text>
-              )}
-            </TouchableOpacity>
+          <TouchableOpacity
+            disabled={!changed || loading}
+            onPress={handleUpdateProfile}
+            className={`w-full rounded-lg py-3 mb-4 flex-row justify-center items-center shadow-md ${
+              !changed || loading ? 'opacity-60' : ''
+            }`}
+            style={{
+              backgroundColor: !changed || loading ? colors.border : colors.accent,
+              elevation: 4, // for Android shadow
+            }}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color={colors.textPrimary} />
+            ) : (
+              <View className="flex-row items-center">
+                <MaterialIcons name="update" size={20} color="white" style={{ marginRight: 8 }} />
+                <Text className="text-white text-center font-semibold text-lg">Update Profile</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={handleChangePassword}
-              className="w-full rounded-md py-3 mb-3"
-              style={{ backgroundColor: '#f59e0b' }}
-            >
-              <Text className="text-white text-center font-semibold">
-                Change Password
-              </Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleChangePassword}
+            className="w-full rounded-lg py-3 mb-4 flex-row justify-center items-center shadow-md"
+            style={{ backgroundColor: '#f59e0b', elevation: 4 }}
+          >
+            <View className="flex-row items-center">
+              <MaterialIcons name="password" size={20} color="white" style={{ marginRight: 8 }} />
+              <Text className="text-white text-center font-semibold text-lg">Change Password</Text>
+            </View>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={handleLogout}
-              disabled={loading}
-              className="w-full rounded-md py-3"
-              style={{
-                backgroundColor: loading ? colors.border : '#dc2626',
-              }}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color={colors.textPrimary} />
-              ) : (
-                <Text className="text-white text-center font-semibold">
-                  Sign Out
-                </Text>
-              )}
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleLogout}
+            disabled={loading}
+            className={`w-full rounded-lg py-3 flex-row justify-center items-center shadow-md ${
+              loading ? 'opacity-60' : ''
+            }`}
+            style={{
+              backgroundColor: loading ? colors.border : '#dc2626',
+              elevation: 4,
+            }}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color={colors.textPrimary} />
+            ) : (
+              <View className="flex-row items-center">
+                <MaterialIcons name="logout" size={20} color="white" style={{ marginRight: 8 }} />
+                <Text className="text-white text-center font-semibold text-lg">Log Out</Text>
+              </View>
+            )}
+          </TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>

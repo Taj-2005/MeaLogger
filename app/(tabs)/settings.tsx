@@ -170,7 +170,7 @@ const SettingsScreen = () => {
             icon="person"
             title="Profile"
             subtitle="Manage your profile information"
-            onPress={() => Alert.alert('Profile', 'Profile screen would open here')}
+            onPress={() => router.push('/profile')}
           />
           <SettingItem
             icon="notifications"
