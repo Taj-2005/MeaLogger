@@ -8,8 +8,8 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
-import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 
 const SettingsScreen = () => {
@@ -102,7 +102,7 @@ const SettingsScreen = () => {
         }}
       >
         <View className="flex-row items-center justify-between">
-          <TouchableOpacity onPress={() => router.push('./(tabs)')}>
+          <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} /> 
           </TouchableOpacity>
           <Text className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
