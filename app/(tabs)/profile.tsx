@@ -280,7 +280,7 @@ export default function Profile() {
               loading ? 'opacity-60' : ''
             }`}
             style={{
-              backgroundColor: loading ? colors.border : '#dc2626',
+              backgroundColor: loading ? colors.border : '#2563eb',
               elevation: 4,
             }}
           >
