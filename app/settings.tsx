@@ -134,8 +134,8 @@ const SettingsScreen = () => {
           </Text>
 
           <SettingItem
-            icon="moon"
-            title="Dark Mode"
+            icon={isDark ? 'moon' : 'sunny'}
+            title={isDark ? 'Dark Mode' : 'Light Mode'}
             subtitle={`Currently using ${theme} mode`}
             rightComponent={
               <Switch
