@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,8 @@ import {
   doc,
 } from 'firebase/firestore';
 import * as Notifications from 'expo-notifications';
+import { useTheme } from '../../contexts/ThemeContext';
+import SettingsButton from '../components/SettingsBtn';
 
 type Reminder = {
   id: string;
@@ -35,6 +37,8 @@ type Reminder = {
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 export default function RemindersScreen() {
+  const { colors, isDark } = useTheme();
+
   const [title, setTitle] = useState('');
   const [mealType, setMealType] = useState(MEAL_TYPES[0]);
   const [time, setTime] = useState(new Date());
@@ -43,14 +47,13 @@ export default function RemindersScreen() {
   const [loading, setLoading] = useState(true);
   const userEmail = auth.currentUser?.email ?? 'guest@example.com';
 
-  // Load reminders live from Firestore for current user
   useEffect(() => {
     const remindersRef = collection(db, 'reminders');
     const q = query(remindersRef, where('userEmail', '==', userEmail));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const rems: Reminder[] = [];
       querySnapshot.forEach((doc) => {
-        rems.push({ ...(doc.data() as Reminder) });;
+        rems.push({ ...(doc.data() as Reminder), id: doc.id });
       });
       setReminders(rems);
       setLoading(false);
@@ -59,7 +62,6 @@ export default function RemindersScreen() {
     return () => unsubscribe();
   }, [userEmail]);
 
-  // Schedule notification for reminder
   const scheduleNotification = async (hour: number, minute: number, title: string) => {
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -83,8 +85,7 @@ export default function RemindersScreen() {
     }
 
     try {
-      // Save reminder to Firestore
-      const newDoc = await addDoc(collection(db, 'reminders'), {
+      await addDoc(collection(db, 'reminders'), {
         title,
         mealType,
         hour: time.getHours(),
@@ -92,10 +93,8 @@ export default function RemindersScreen() {
         userEmail,
       });
 
-      // Schedule notification
       await scheduleNotification(time.getHours(), time.getMinutes(), title);
 
-      // Reset form
       setTitle('');
       setMealType(MEAL_TYPES[0]);
       setTime(new Date());
@@ -127,7 +126,7 @@ export default function RemindersScreen() {
   };
 
   const onChangeTime = (event: any, selectedDate?: Date) => {
-    setShowTimePicker(Platform.OS === 'ios'); // For iOS keep open, for Android close after select
+    setShowTimePicker(Platform.OS === 'ios'); // keep open on iOS
     if (selectedDate) {
       setTime(selectedDate);
     }
@@ -135,29 +134,51 @@ export default function RemindersScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#2563eb" />
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: colors.primaryBackground }}
+      >
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 p-4 bg-white">
-      <Text className="text-2xl font-bold mb-4 mt-10">Manage Meal Reminders</Text>
+    <View className="flex-1 p-4" style={{ backgroundColor: colors.primaryBackground }}>
+      <View className="flex-row justify-between items-center mb-4 mt-10">
+        <Text className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+          Manage Meal Reminders
+        </Text>
+        <SettingsButton />
+      </View>
 
       {/* Title input */}
       <TextInput
         placeholder="Reminder Title"
+        placeholderTextColor={colors.textMuted}
         value={title}
         onChangeText={setTitle}
-        className="border border-gray-400 rounded p-2 mb-4"
+        className="border rounded p-2 mb-4"
+        style={{
+          borderColor: colors.border,
+          color: colors.textPrimary,
+          backgroundColor: colors.surface,
+        }}
       />
 
       {/* Meal type picker */}
-      <View className="border border-gray-400 rounded mb-4">
-        <Picker selectedValue={mealType} onValueChange={(value) => setMealType(value)}>
+      <View
+        className="border rounded mb-4"
+        style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+      >
+        <Picker
+          selectedValue={mealType}
+          onValueChange={(value) => setMealType(value)}
+          style={{ color: colors.textPrimary }}
+          dropdownIconColor={colors.textPrimary}
+        >
           {MEAL_TYPES.map((type) => (
-            <Picker.Item label={type} value={type} key={type} />
+            <Picker.Item label={type} value={type} key={type} color={colors.textPrimary} />
           ))}
         </Picker>
       </View>
@@ -165,9 +186,10 @@ export default function RemindersScreen() {
       {/* Time picker */}
       <TouchableOpacity
         onPress={() => setShowTimePicker(true)}
-        className="border border-gray-400 rounded p-3 mb-4"
+        className="border rounded p-3 mb-4"
+        style={{ borderColor: colors.border, backgroundColor: colors.surface }}
       >
-        <Text className="text-gray-800">
+        <Text style={{ color: colors.textPrimary }}>
           Set Time: {time.getHours().toString().padStart(2, '0')}:
           {time.getMinutes().toString().padStart(2, '0')}
         </Text>
@@ -180,42 +202,60 @@ export default function RemindersScreen() {
           is24Hour={true}
           display="default"
           onChange={onChangeTime}
+          textColor={colors.textPrimary} // For iOS picker text color
+          style={{ backgroundColor: colors.primaryBackground }}
         />
       )}
 
       {/* Add reminder button */}
       <TouchableOpacity
         onPress={handleAddReminder}
-        className="bg-blue-600 rounded p-3 mb-6"
+        className="rounded p-3 mb-6"
+        style={{ backgroundColor: colors.accent }}
       >
-        <Text className="text-white text-center font-semibold">Add Reminder</Text>
+        <Text className="text-center font-semibold" style={{ color: colors.switchThumb }}>
+          Add Reminder
+        </Text>
       </TouchableOpacity>
 
       {/* List reminders */}
       {reminders.length === 0 ? (
-        <Text className="text-center text-gray-600">No reminders set yet.</Text>
+        <Text className="text-center" style={{ color: colors.textMuted }}>
+          No reminders set yet.
+        </Text>
       ) : (
         <FlatList
           data={reminders}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <View className="flex-row justify-between items-center border-b border-gray-300 py-3">
+            <View
+              className="flex-row justify-between items-center border-b py-3"
+              style={{ borderColor: colors.border }}
+            >
               <View>
-                <Text className="font-semibold text-lg">{item.title}</Text>
-                <Text>
-                  {item.mealType} at{' '}
-                  {item.hour.toString().padStart(2, '0')}:
+                <Text className="font-semibold text-lg" style={{ color: colors.textPrimary }}>
+                  {item.title}
+                </Text>
+                <Text style={{ color: colors.textMuted }}>
+                  {item.mealType} at {item.hour.toString().padStart(2, '0')}:
                   {item.minute.toString().padStart(2, '0')}
                 </Text>
               </View>
               <TouchableOpacity
                 onPress={() => handleDeleteReminder(item.id)}
-                className="bg-red-100 px-3 py-1 rounded"
+                className="px-3 py-1 rounded"
+                style={{ backgroundColor: isDark ? '#7f1d1d' : '#fee2e2' }} // red-900 / red-100
               >
-                <Text className="text-red-600 font-semibold">Delete</Text>
+                <Text
+                  className="font-semibold"
+                  style={{ color: isDark ? '#fecaca' : '#b91c1c' }} // red-300 / red-700
+                >
+                  Delete
+                </Text>
               </TouchableOpacity>
             </View>
           )}
+          contentContainerStyle={{ paddingBottom: 40 }}
         />
       )}
     </View>

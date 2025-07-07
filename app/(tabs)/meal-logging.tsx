@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  Alert, 
-  Image, 
-  ActivityIndicator, 
-  ScrollView, 
-  Dimensions 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  Image,
+  ActivityIndicator,
+  ScrollView,
+  Dimensions,
+  Settings,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -18,11 +19,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { auth } from '../../firebaseConfig';
 import { saveMealToFirestore } from '../../firebaseHelpers';
+import { useTheme } from '../../contexts/ThemeContext';
+import SettingsButton from '../components/SettingsBtn';
 
 const { width } = Dimensions.get('window');
 
 export default function MealLoggingScreen() {
   const router = useRouter();
+  const { colors, isDark } = useTheme();
 
   const [title, setTitle] = useState('');
   const [mealType, setMealType] = useState('breakfast');
@@ -72,13 +76,9 @@ export default function MealLoggingScreen() {
         userEmail,
       };
 
-      // ✅ Save to Firestore with userEmail
       await saveMealToFirestore(mealId, mealData);
-
-      // ✅ Save local image path
       await AsyncStorage.setItem(`meal_image_${mealId}`, capturedImage);
 
-      // ✅ Also keep local cache for offline
       const existingMeals = await AsyncStorage.getItem('meals');
       const meals = existingMeals ? JSON.parse(existingMeals) : [];
       meals.unshift({ ...mealData, imageUri: capturedImage });
@@ -95,8 +95,8 @@ export default function MealLoggingScreen() {
             setCalories('');
             setCapturedImage(null);
             router.push('./timeline');
-          }
-        }
+          },
+        },
       ]);
     } catch (error) {
       console.error('Error saving meal:', error);
@@ -108,13 +108,25 @@ export default function MealLoggingScreen() {
   };
 
   return (
-    <View className='flex-1 bg-gray-100 mt-20 p-4'>
+    <View
+      className="flex-1 pt-20 p-4"
+      style={{ backgroundColor: colors.primaryBackground }}
+    >
       <ScrollView>
-        <Text className='text-2xl font-bold mb-4'>Log Your Meal</Text>
+        <View className="flex-row items-center justify-between  mb-4">
+          <Text
+            className="text-2xl font-bold"
+            style={{ color: colors.textPrimary }}
+          >
+            Log Your Meal
+          </Text>
+          <SettingsButton />
+        </View>
 
         <TouchableOpacity
           onPress={pickImage}
-          className='border-2 border-dashed border-gray-300 rounded-lg h-48 mb-6 flex items-center justify-center'
+          className="border-2 border-dashed rounded-lg h-48 mb-6 flex items-center justify-center"
+          style={{ borderColor: colors.border }}
         >
           {capturedImage ? (
             <Image
@@ -123,57 +135,108 @@ export default function MealLoggingScreen() {
               resizeMode="cover"
             />
           ) : (
-            <View className='flex flex-col justify-center items-center'>
-              <Ionicons name="camera-outline" size={30} color="#000" />
-              <Text className=' text-gray-500'>Tap to take photo</Text>
+            <View className="flex flex-col justify-center items-center">
+              <Ionicons
+                name="camera-outline"
+                size={30}
+                color={isDark ? colors.textMuted : '#000'}
+              />
+              <Text
+                className="text-gray-500"
+                style={{ color: colors.textMuted }}
+              >
+                Tap to take photo
+              </Text>
             </View>
           )}
         </TouchableOpacity>
 
         <TextInput
           placeholder="Meal Title"
+          placeholderTextColor={colors.textMuted}
           value={title}
           onChangeText={setTitle}
-          className='border border-gray-300 rounded-lg p-3 mb-4 bg-white'
+          className="border rounded-lg p-3 mb-4"
+          style={{
+            borderColor: colors.border,
+            color: colors.textPrimary,
+            backgroundColor: colors.surface,
+          }}
         />
 
-        <Picker
-          selectedValue={mealType}
-          onValueChange={setMealType}
-          style={{ backgroundColor: 'white', marginBottom: 16 }}
+        <View
+          className="mb-4 rounded-lg"
+          style={{
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderWidth: 1,
+          }}
         >
-          <Picker.Item label="Breakfast" value="breakfast" />
-          <Picker.Item label="Lunch" value="lunch" />
-          <Picker.Item label="Dinner" value="dinner" />
-          <Picker.Item label="Snack" value="snack" />
-        </Picker>
+          <Picker
+            selectedValue={mealType}
+            onValueChange={setMealType}
+            style={{ color: colors.textPrimary }}
+            dropdownIconColor={colors.textPrimary}
+          >
+            <Picker.Item label="Breakfast" value="breakfast" />
+            <Picker.Item label="Lunch" value="lunch" />
+            <Picker.Item label="Dinner" value="dinner" />
+            <Picker.Item label="Snack" value="snack" />
+          </Picker>
+        </View>
 
         <TextInput
           placeholder="Date (YYYY-MM-DD)"
+          placeholderTextColor={colors.textMuted}
           value={date}
           onChangeText={setDate}
-          className='border border-gray-300 rounded-lg p-3 mb-4 bg-white'
+          className="border rounded-lg p-3 mb-4"
+          style={{
+            borderColor: colors.border,
+            color: colors.textPrimary,
+            backgroundColor: colors.surface,
+          }}
         />
 
         <TextInput
           placeholder="Calories (optional)"
+          placeholderTextColor={colors.textMuted}
           value={calories}
           onChangeText={setCalories}
           keyboardType="numeric"
-          className='border border-gray-300 rounded-lg p-3 mb-4 bg-white'
+          className="border rounded-lg p-3 mb-4"
+          style={{
+            borderColor: colors.border,
+            color: colors.textPrimary,
+            backgroundColor: colors.surface,
+          }}
         />
 
-        {error ? <Text className='text-red-600 mb-4'>{error}</Text> : null}
+        {error ? (
+          <Text className="mb-4 text-red-600">
+            {error}
+          </Text>
+        ) : null}
 
         <TouchableOpacity
           onPress={handleSaveMeal}
           disabled={isLoading}
-          className={`py-4 rounded-lg ${isLoading ? 'bg-gray-400' : 'bg-blue-600'}`}
+          className={`py-4 rounded-lg ${
+            isLoading ? 'bg-gray-400' : 'bg-blue-600'
+          }`}
+          style={{
+            backgroundColor: isLoading ? colors.border : colors.accent,
+          }}
         >
           {isLoading ? (
-            <ActivityIndicator color="white" />
+            <ActivityIndicator color={colors.switchThumb} />
           ) : (
-            <Text className='text-white font-semibold text-center'>Save Meal</Text>
+            <Text
+              className="font-semibold text-center"
+              style={{ color: colors.switchThumb }}
+            >
+              Save Meal
+            </Text>
           )}
         </TouchableOpacity>
       </ScrollView>

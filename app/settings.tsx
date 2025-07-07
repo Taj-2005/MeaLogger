@@ -8,10 +8,12 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'expo-router';
 
 const SettingsScreen = () => {
+  const router = useRouter();
   const { theme, toggleTheme, isDark, colors } = useTheme();
   const { logout } = useAuth();
 
@@ -59,35 +61,30 @@ const SettingsScreen = () => {
       <TouchableOpacity
         onPress={onPress}
         activeOpacity={0.7}
+        className="flex-row items-center justify-between py-4 px-2 rounded-lg mb-1"
         style={{
           backgroundColor: colors.cardBackground,
           borderBottomColor: colors.border,
           borderBottomWidth: 1,
-          paddingVertical: 16,
-          paddingHorizontal: 8,
-          borderRadius: 8,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+        <View className="flex-row items-center flex-1">
           {renderIcon()}
-          <View style={{ marginLeft: 16, flex: 1 }}>
-            <Text style={{ fontSize: 16, fontWeight: '500', color: colors.textPrimary }}>{title}</Text>
+          <View className="ml-4 flex-1">
+            <Text className="text-base font-medium" style={{ color: colors.textPrimary }}>
+              {title}
+            </Text>
             {subtitle && (
-              <Text style={{ fontSize: 14, marginTop: 4, color: colors.textMuted }}>{subtitle}</Text>
+              <Text className="text-sm mt-1" style={{ color: colors.textMuted }}>
+                {subtitle}
+              </Text>
             )}
           </View>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View className="flex-row items-center">
           {rightComponent}
           {showArrow && !rightComponent && (
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={colors.iconMuted}
-            />
+            <Ionicons name="chevron-forward" size={20} color={colors.iconMuted} />
           )}
         </View>
       </TouchableOpacity>
@@ -95,52 +92,44 @@ const SettingsScreen = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.primaryBackground }}>
+    <View className="flex-1" style={{ backgroundColor: colors.primaryBackground }}>
       {/* Header */}
       <View
+        className="pt-12 pb-6 px-6 border-b"
         style={{
-          paddingTop: 48,
-          paddingBottom: 24,
-          paddingHorizontal: 24,
           borderBottomColor: colors.border,
-          borderBottomWidth: 1,
           backgroundColor: colors.primaryBackground,
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ fontSize: 24, fontWeight: '700', color: colors.textPrimary }}>Settings</Text>
-          <View style={{
-            padding: 8,
-            borderRadius: 24,
-            backgroundColor: colors.surface,
-          }}>
-            <Ionicons
-              name="settings"
-              size={24}
-              color={colors.textPrimary}
-            />
+        <View className="flex-row items-center justify-between">
+          <TouchableOpacity onPress={() => router.push('./(tabs)')}>
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} /> 
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+            Settings
+          </Text>
+          <View
+            className="p-2 rounded-full"
+            style={{ backgroundColor: colors.surface }}
+          >
+            <Ionicons name="settings" size={24} color={colors.textPrimary} />
           </View>
         </View>
       </View>
 
-      <ScrollView style={{ flex: 1, paddingHorizontal: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
         {/* Appearance Section */}
-        <View style={{
-          marginBottom: 24,
-          padding: 16,
-          borderRadius: 12,
-          backgroundColor: colors.cardBackground,
-          borderColor: colors.border,
-          borderWidth: 1,
-        }}>
-          <Text style={{
-            fontSize: 12,
-            fontWeight: '600',
-            marginBottom: 12,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-            color: colors.textMuted,
-          }}>
+        <View
+          className="mb-6 mt-4 p-4 rounded-xl"
+          style={{
+            backgroundColor: colors.cardBackground,
+            borderColor: colors.border,
+          }}
+        >
+          <Text
+            className="text-xs font-semibold mb-3 uppercase tracking-wide"
+            style={{ color: colors.textMuted }}
+          >
             Appearance
           </Text>
 
@@ -164,22 +153,17 @@ const SettingsScreen = () => {
         </View>
 
         {/* Account Section */}
-        <View style={{
-          marginBottom: 24,
-          padding: 16,
-          borderRadius: 12,
-          backgroundColor: colors.cardBackground,
-          borderColor: colors.border,
-          borderWidth: 1,
-        }}>
-          <Text style={{
-            fontSize: 12,
-            fontWeight: '600',
-            marginBottom: 12,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-            color: colors.textMuted,
-          }}>
+        <View
+          className="mb-6 p-4 rounded-xl"
+          style={{
+            backgroundColor: colors.cardBackground,
+            borderColor: colors.border,
+          }}
+        >
+          <Text
+            className="text-xs font-semibold mb-3 uppercase tracking-wide"
+            style={{ color: colors.textMuted }}
+          >
             Account
           </Text>
           <SettingItem
@@ -203,22 +187,17 @@ const SettingsScreen = () => {
         </View>
 
         {/* Meal Logging Section */}
-        <View style={{
-          marginBottom: 24,
-          padding: 16,
-          borderRadius: 12,
-          backgroundColor: colors.cardBackground,
-          borderColor: colors.border,
-          borderWidth: 1,
-        }}>
-          <Text style={{
-            fontSize: 12,
-            fontWeight: '600',
-            marginBottom: 12,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-            color: colors.textMuted,
-          }}>
+        <View
+          className="mb-6 p-4 rounded-xl"
+          style={{
+            backgroundColor: colors.cardBackground,
+            borderColor: colors.border,
+          }}
+        >
+          <Text
+            className="text-xs font-semibold mb-3 uppercase tracking-wide"
+            style={{ color: colors.textMuted }}
+          >
             Meal Logging
           </Text>
           <SettingItem
@@ -243,22 +222,17 @@ const SettingsScreen = () => {
         </View>
 
         {/* Support Section */}
-        <View style={{
-          marginBottom: 24,
-          padding: 16,
-          borderRadius: 12,
-          backgroundColor: colors.cardBackground,
-          borderColor: colors.border,
-          borderWidth: 1,
-        }}>
-          <Text style={{
-            fontSize: 12,
-            fontWeight: '600',
-            marginBottom: 12,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-            color: colors.textMuted,
-          }}>
+        <View
+          className="mb-6 p-4 rounded-xl"
+          style={{
+            backgroundColor: colors.cardBackground,
+            borderColor: colors.border,
+          }}
+        >
+          <Text
+            className="text-xs font-semibold mb-3 uppercase tracking-wide"
+            style={{ color: colors.textMuted }}
+          >
             Support
           </Text>
           <SettingItem
@@ -282,14 +256,13 @@ const SettingsScreen = () => {
         </View>
 
         {/* Logout Section */}
-        <View style={{
-          marginBottom: 32,
-          padding: 16,
-          borderRadius: 12,
-          backgroundColor: colors.cardBackground,
-          borderColor: colors.border,
-          borderWidth: 1,
-        }}>
+        <View
+          className="mb-10 p-4 rounded-xl"
+          style={{
+            backgroundColor: colors.cardBackground,
+            borderColor: colors.border,
+          }}
+        >
           <SettingItem
             icon="log-out"
             title="Logout"

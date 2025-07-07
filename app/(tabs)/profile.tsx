@@ -21,19 +21,24 @@ import {
   User,
 } from "firebase/auth";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
+import { useTheme } from "../../contexts/ThemeContext";
+import SettingsButton from "../components/SettingsBtn";
 
 const windowWidth = Dimensions.get("window").width;
 
 export default function Profile() {
   const auth = getAuth();
   const currentUser = auth.currentUser;
+  const { colors } = useTheme();
 
   const [user, setUser] = useState<User | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [changed, setChanged] = useState(false);
-  const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [message, setMessage] = useState<
+    { type: "error" | "success"; text: string } | null
+  >(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -65,9 +70,11 @@ export default function Profile() {
     }
   }, [message]);
 
-  const isEmailValid = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isEmailValid = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const showMessage = (type: "error" | "success", text: string) => setMessage({ type, text });
+  const showMessage = (type: "error" | "success", text: string) =>
+    setMessage({ type, text });
 
   const handleUpdateProfile = async () => {
     setMessage(null);
@@ -122,7 +129,10 @@ export default function Profile() {
               Alert.alert("Success", "Password reset email sent!");
             } catch (e: any) {
               console.error(e);
-              Alert.alert("Error", e.message || "Failed to send password reset email");
+              Alert.alert(
+                "Error",
+                e.message || "Failed to send password reset email"
+              );
             }
           },
         },
@@ -156,8 +166,12 @@ export default function Profile() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-[#f7f9fc]"
+      className="flex-1"
+      style={{ backgroundColor: colors.primaryBackground }}
     >
+      <View className="flex sticky flex-col justify-end items-end w-full pt-10 pr-2">
+        <SettingsButton />
+      </View>
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
@@ -168,24 +182,79 @@ export default function Profile() {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Profile Avatar + Basic Info */}
+
+        {/* Avatar & Basic Info */}
         <View
-          className={`bg-white rounded-2xl py-8 px-6 mb-8 ${windowWidth > 500 ? "w-[480px]" : "w-full"} items-center shadow-lg`}
+          className={`rounded-3xl mb-8 items-center shadow-lg`}
+          style={{
+            backgroundColor: colors.cardBackground,
+            width: windowWidth > 500 ? 480 : "100%",
+            paddingVertical: 32,
+            paddingHorizontal: 24,
+            shadowColor: 'bg-black',
+            shadowOpacity: 0.1,
+            shadowRadius: 10,
+            elevation: 6,
+          }}
         >
-          <View className="bg-blue-600 w-24 h-24 rounded-full justify-center items-center mb-5 shadow-md">
-            <Text className="text-white text-4xl font-extrabold tracking-widest">{avatarText}</Text>
+          <View
+            className="rounded-full mb-5 justify-center items-center"
+            style={{
+              backgroundColor: colors.accent,
+              width: 96,
+              height: 96,
+              shadowColor: 'bg-black',
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <Text
+              className="text-white font-extrabold"
+              style={{
+                fontSize: 48,
+                letterSpacing: 6,
+              }}
+            >
+              {avatarText}
+            </Text>
           </View>
-          <Text className="text-2xl font-bold text-gray-900">{name || "User"}</Text>
-          <Text className="text-base text-gray-500 mt-1 text-center">{email || "No email set"}</Text>
+          <Text
+            className="font-bold"
+            style={{ fontSize: 28, color: colors.textPrimary }}
+          >
+            {name || "User"}
+          </Text>
+          <Text
+            className="text-center mt-1"
+            style={{ color: colors.textMuted, fontSize: 16 }}
+          >
+            {email || "No email set"}
+          </Text>
         </View>
 
         {/* Inputs Card */}
         <View
-          className={`bg-white rounded-2xl py-7 px-6 ${windowWidth > 500 ? "w-[480px]" : "w-full"} shadow-md`}
+          className={`rounded-3xl shadow-md`}
+          style={{
+            backgroundColor: colors.cardBackground,
+            width: windowWidth > 500 ? 480 : "100%",
+            paddingVertical: 28,
+            paddingHorizontal: 24,
+            shadowColor: 'bg-black',
+            shadowOpacity: 0.1,
+            shadowRadius: 10,
+            elevation: 6,
+          }}
         >
           {/* Name Input */}
           <View className="mb-6">
-            <Text className="text-gray-700 font-semibold mb-1 text-sm">Full Name</Text>
+            <Text
+              className="text-sm font-semibold mb-1"
+              style={{ color: colors.textMuted }}
+            >
+              Full Name
+            </Text>
             <TextInput
               value={name}
               onChangeText={(text) => {
@@ -195,14 +264,23 @@ export default function Profile() {
               }}
               placeholder="Enter your full name"
               autoCapitalize="words"
-              className="border border-gray-300 rounded-lg px-4 py-3 text-gray-900 bg-gray-50 text-base"
-              placeholderTextColor="#9ca3af"
+              className="border rounded-lg px-4 py-3 text-base"
+              style={{
+                borderColor: colors.border,
+                color: colors.textPrimary,
+                backgroundColor: colors.surface,
+              }}
             />
           </View>
 
           {/* Email Input */}
           <View className="mb-6">
-            <Text className="text-gray-700 font-semibold mb-1 text-sm">Email Address</Text>
+            <Text
+              className="text-sm font-semibold mb-1"
+              style={{ color: colors.textMuted }}
+            >
+              Email Address
+            </Text>
             <TextInput
               value={email}
               onChangeText={(text) => {
@@ -213,8 +291,12 @@ export default function Profile() {
               placeholder="Enter your email"
               keyboardType="email-address"
               autoCapitalize="none"
-              className="border border-gray-300 rounded-lg px-4 py-3 text-gray-900 bg-gray-50 text-base"
-              placeholderTextColor="#9ca3af"
+              className="border rounded-lg px-4 py-3 text-base"
+              style={{
+                borderColor: colors.border,
+                color: colors.textPrimary,
+                backgroundColor: colors.surface,
+              }}
             />
           </View>
 
@@ -222,13 +304,17 @@ export default function Profile() {
           {message && (
             <Animated.View
               style={{ opacity: fadeAnim }}
-              className={`mb-5 py-2 px-4 rounded-lg ${
-                message.type === "error" ? "bg-red-100" : "bg-green-100"
+              className={`mb-5 rounded-lg py-2 px-4 ${
+                message.type === "error"
+                  ? "bg-red-100"
+                  : "bg-green-100"
               }`}
             >
               <Text
                 className={`text-center font-semibold text-sm ${
-                  message.type === "error" ? "text-red-700" : "text-green-700"
+                  message.type === "error"
+                    ? "text-red-700"
+                    : "text-green-700"
                 }`}
               >
                 {message.text}
@@ -236,8 +322,8 @@ export default function Profile() {
             </Animated.View>
           )}
 
-          {/* Buttons Group */}
-          <View className="space-y-4 flex flex-col gap-2">
+          {/* Buttons */}
+          <View className="space-y-4 flex flex-col gap-4">
             <TouchableOpacity
               disabled={!changed || loading}
               onPress={handleUpdateProfile}
@@ -251,7 +337,9 @@ export default function Profile() {
               ) : (
                 <>
                   <MaterialIcons name="update" size={20} color="white" />
-                  <Text className="text-white font-semibold text-lg ml-2">Update Profile</Text>
+                  <Text className="text-white font-semibold text-lg ml-2">
+                    Update Profile
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
@@ -262,7 +350,9 @@ export default function Profile() {
               className="flex-row justify-center items-center rounded-lg py-4 bg-yellow-500 shadow-md"
             >
               <Feather name="key" size={20} color="white" />
-              <Text className="text-white font-semibold text-lg ml-2">Change Password</Text>
+              <Text className="text-white font-semibold text-lg ml-2">
+                Change Password
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -278,7 +368,9 @@ export default function Profile() {
               ) : (
                 <>
                   <MaterialIcons name="logout" size={20} color="white" />
-                  <Text className="text-white font-semibold text-lg ml-2">Sign Out</Text>
+                  <Text className="text-white font-semibold text-lg ml-2">
+                    Sign Out
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
