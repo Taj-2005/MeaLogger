@@ -24,9 +24,7 @@ Thumbs.db
 *.swo
 *~
 
-# Test coverage
-coverage/
-.nyc_output/
+# Test coverage (removed - not needed for university project)
 
 # Build
 dist/

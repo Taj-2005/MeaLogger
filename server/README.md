@@ -327,28 +327,20 @@ The API supports offline sync with:
 
 ## Deployment
 
-See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for complete deployment guide.
+**Recommended: Deploy to Vercel (Free & Easy)**
 
-### Quick Deploy Options:
+See **[DEPLOY_VERCEL.md](./DEPLOY_VERCEL.md)** for complete guide.
 
-**1. PM2 (Recommended - Simple & Reliable):**
-```bash
-npm install -g pm2
-npm run pm2:start
-```
+**Quick Steps:**
+1. Push code to GitHub
+2. Sign up at [vercel.com](https://vercel.com)
+3. Import GitHub repo
+4. Add environment variables
+5. Deploy!
 
-**2. Docker:**
-```bash
-docker build -t meal-logger-server .
-docker run -p 4000:4000 --env-file .env meal-logger-server
-```
+Your API will be live at `https://your-app.vercel.app`
 
-**3. Cloud Platforms:**
-- Railway.app (easiest for students)
-- Render.com
-- Heroku
-
-See `DEPLOYMENT.md` for detailed steps.
+See `DEPLOY_VERCEL.md` for detailed instructions.
 
 ## CI/CD (Optional)
 

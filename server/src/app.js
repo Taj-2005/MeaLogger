@@ -55,9 +55,16 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging middleware
+// Logging middleware (simplified for serverless)
 if (config.nodeEnv !== 'test') {
-  app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
+  app.use(morgan('combined', { 
+    stream: { 
+      write: (message) => {
+        // In serverless, just log to console (Vercel captures this)
+        console.log(message.trim());
+      }
+    } 
+  }));
 }
 
 // Rate limiting

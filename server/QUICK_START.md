@@ -25,39 +25,17 @@ Server runs on `http://localhost:4000`
 
 ---
 
-## Production Deployment
+## Deploy to Vercel (Production)
 
-### Option 1: PM2 (Recommended)
+**Easiest way for university projects:**
 
-```bash
-# Install PM2 globally
-npm install -g pm2
+1. **Push to GitHub**
+2. **Go to [vercel.com](https://vercel.com)** and sign up
+3. **Import your GitHub repo**
+4. **Add environment variables** (see DEPLOY_VERCEL.md)
+5. **Deploy!**
 
-# Start server
-npm run pm2:start
-
-# Check status
-pm2 status
-
-# View logs
-npm run pm2:logs
-```
-
-### Option 2: Simple Node
-
-```bash
-npm run prod
-```
-
-### Option 3: Docker
-
-```bash
-# Build
-docker build -t meal-logger-server .
-
-# Run
-docker run -p 4000:4000 --env-file .env meal-logger-server
-```
+See **[DEPLOY_VERCEL.md](./DEPLOY_VERCEL.md)** for complete guide.
 
 ---
 
@@ -91,11 +69,12 @@ curl -X POST http://localhost:4000/api/v1/auth/register \
 
 ## Update Mobile App
 
-Change API URL in your React Native app:
+After deploying to Vercel, update your React Native app:
 
 ```typescript
-const API_BASE_URL = 'https://your-server-domain.com/api/v1';
+const API_BASE_URL = 'https://your-app.vercel.app/api/v1';
 ```
 
-That's it! 🚀
+---
 
+**That's it! Simple and ready for your university project!** 🎓
