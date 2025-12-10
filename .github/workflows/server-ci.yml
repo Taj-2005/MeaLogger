@@ -1,0 +1,65 @@
+name: Server CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'server/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'server/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Run linter
+        working-directory: ./server
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: ./server
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://localhost:27017/meal-logger-test
+          JWT_SECRET: test-secret-key-for-ci-min-32-chars
+          CLOUDINARY_CLOUD_NAME: test
+          CLOUDINARY_API_KEY: test
+          CLOUDINARY_API_SECRET: test
+        run: npm test
+
+      - name: Upload coverage
+        if: always()
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./server/coverage/lcov.info
+          flags: server
+          name: server-coverage
+
