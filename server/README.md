@@ -327,26 +327,28 @@ The API supports offline sync with:
 
 ## Deployment
 
-### Using Docker (optional):
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for complete deployment guide.
 
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 4000
-CMD ["npm", "start"]
+### Quick Deploy Options:
+
+**1. PM2 (Recommended - Simple & Reliable):**
+```bash
+npm install -g pm2
+npm run pm2:start
 ```
 
-### Environment Setup:
+**2. Docker:**
+```bash
+docker build -t meal-logger-server .
+docker run -p 4000:4000 --env-file .env meal-logger-server
+```
 
-1. Set `NODE_ENV=production`
-2. Use strong `JWT_SECRET` (32+ characters)
-3. Configure production MongoDB URI
-4. Set up Cloudinary credentials
-5. Configure CORS origins for your domains
-6. Set up reverse proxy (nginx) with HTTPS
+**3. Cloud Platforms:**
+- Railway.app (easiest for students)
+- Render.com
+- Heroku
+
+See `DEPLOYMENT.md` for detailed steps.
 
 ## CI/CD (Optional)
 

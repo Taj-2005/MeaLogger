@@ -15,17 +15,15 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-// Connect to MongoDB
+// Connect to MongoDB (simplified connection)
 mongoose
-  .connect(config.mongoUri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(config.mongoUri)
   .then(() => {
     logger.info('MongoDB connected successfully');
   })
   .catch((err) => {
     logger.error('MongoDB connection error:', err);
+    logger.error('Please check your MONGO_URI in .env file');
     process.exit(1);
   });
 
