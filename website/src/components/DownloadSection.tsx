@@ -1,13 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Smartphone, Shield, Download as DownloadIcon } from "lucide-react";
 import { fadeInUp, staggerContainer } from "@/lib/animations";
+import { motion } from "framer-motion";
+import { Download as DownloadIcon, Shield, Smartphone } from "lucide-react";
 import DownloadButton from "./DownloadButton";
 
 export default function DownloadSection() {
   return (
-    <section className="py-24 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
+    <section id="download" className="py-24 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden scroll-mt-20">
       <div className="absolute inset-0 bg-black opacity-10" />
       <div className="absolute inset-0 bg-grid-pattern opacity-5" />
 

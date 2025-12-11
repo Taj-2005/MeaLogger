@@ -8,15 +8,18 @@ export interface QueuedRequest {
   endpoint: string;
   method: string;
   data: any;
+  imageUri?: string;
+  localId?: string;
   timestamp: number;
   retries: number;
+  status?: 'pending' | 'syncing' | 'synced' | 'failed';
 }
 
 export class OfflineQueue {
-  private static maxRetries = 3;
+  private static maxRetries = 5;
 
   // Add request to queue
-  static async enqueue(request: Omit<QueuedRequest, 'id' | 'timestamp' | 'retries'>): Promise<void> {
+  static async enqueue(request: Omit<QueuedRequest, 'id' | 'timestamp' | 'retries' | 'status'>): Promise<string> {
     try {
       const queue = await this.getQueue();
       const queuedRequest: QueuedRequest = {
@@ -24,11 +27,14 @@ export class OfflineQueue {
         id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         timestamp: Date.now(),
         retries: 0,
+        status: 'pending',
       };
       queue.push(queuedRequest);
       await this.saveQueue(queue);
+      return queuedRequest.id;
     } catch (error) {
       console.error('Error enqueueing request:', error);
+      throw error;
     }
   }
 

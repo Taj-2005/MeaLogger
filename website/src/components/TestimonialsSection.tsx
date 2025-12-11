@@ -16,7 +16,7 @@ const testimonials = [
     name: "Michael Rodriguez",
     role: "Fitness Coach",
     content:
-      "As someone who needs to track meals for my clients, MealLogger's simplicity and offline support make it perfect for busy days.",
+      "As someone who needs to track meals for my clients, MealLogger's simplicity and cloud sync make it perfect. I can access everything from any device, and I never lose my data.",
     rating: 5,
   },
   {

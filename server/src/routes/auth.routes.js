@@ -14,4 +14,6 @@ router.post('/refresh', validateRefreshToken, authController.refreshToken);
 
 router.post('/logout', authenticate, authController.logout);
 
+router.get('/health', authController.healthCheck);
+
 module.exports = router;

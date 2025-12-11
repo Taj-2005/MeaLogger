@@ -25,5 +25,14 @@ connectDatabase().catch((err) => {
   logger.error('Failed to connect to database:', err);
 });
 
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
 module.exports = app;
 

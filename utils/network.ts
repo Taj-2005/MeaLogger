@@ -15,27 +15,54 @@ const isWeb = Platform.OS === 'web';
 
 export function getNetworkState(): Promise<NetworkState> {
   if (isWeb) {
-    // For web, use navigator.onLine
+    // For web, use navigator.onLine with fallback
+    const hasNavigator = typeof navigator !== 'undefined';
+    const online = hasNavigator ? navigator.onLine : true;
+    
     return Promise.resolve({
-      isConnected: typeof navigator !== 'undefined' ? navigator.onLine : true,
-      isInternetReachable: typeof navigator !== 'undefined' ? navigator.onLine : true,
+      isConnected: online,
+      isInternetReachable: online,
       type: 'wifi',
     });
   }
   
-  return NetInfo.fetch().then(state => ({
-    isConnected: state.isConnected ?? false,
-    isInternetReachable: state.isInternetReachable ?? null,
-    type: state.type,
-  }));
+  return NetInfo.fetch().then(state => {
+    // On mobile, isConnected is the primary indicator
+    // isInternetReachable can be null (unknown), which we treat as reachable
+    const isConnected = state.isConnected ?? false;
+    const isInternetReachable = state.isInternetReachable ?? (isConnected ? true : null);
+    
+    return {
+      isConnected,
+      isInternetReachable,
+      type: state.type,
+    };
+  });
 }
 
 export function isOnline(): Promise<boolean> {
   if (isWeb) {
-    return Promise.resolve(typeof navigator !== 'undefined' ? navigator.onLine : true);
+    // For web, navigator.onLine can be unreliable, so also try a quick fetch test
+    const hasNavigator = typeof navigator !== 'undefined' && navigator.onLine;
+    if (!hasNavigator) {
+      return Promise.resolve(false);
+    }
+    
+    // Additional check: try to fetch a small resource to verify actual connectivity
+    return fetch('https://www.google.com/favicon.ico', { 
+      method: 'HEAD',
+      mode: 'no-cors',
+      cache: 'no-cache'
+    })
+      .then(() => true)
+      .catch(() => hasNavigator); // Fallback to navigator.onLine if fetch fails
   }
   
-  return getNetworkState().then(state => state.isConnected && (state.isInternetReachable ?? true));
+  return getNetworkState().then(state => {
+    // Consider online if connected, even if isInternetReachable is null (unknown)
+    // Only mark offline if explicitly disconnected
+    return state.isConnected === true;
+  });
 }
 
 export function subscribeToNetworkChanges(callback: (state: NetworkState) => void): () => void {

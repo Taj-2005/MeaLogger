@@ -1,14 +1,14 @@
 "use client";
 
+import { fadeInUp, slideInLeft, slideInRight, staggerContainer } from "@/lib/animations";
 import { motion } from "framer-motion";
 import {
-  Camera,
-  Clock,
-  Calendar,
-  Bell,
-  Trophy,
+    Bell,
+    Calendar,
+    Camera,
+    Clock,
+    Trophy,
 } from "lucide-react";
-import { fadeInUp, staggerContainer, slideInLeft, slideInRight } from "@/lib/animations";
 
 const steps = [
   {
@@ -55,7 +55,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
+    <section id="how-it-works" className="py-24 bg-gradient-to-b from-gray-50 to-white scroll-mt-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"

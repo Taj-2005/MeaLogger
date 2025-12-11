@@ -41,15 +41,60 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const restoreSession = async () => {
       setIsLoading(true);
       try {
-        const token = await AsyncStorage.getItem('accessToken');
-        if (token) {
-          const result = await api.getProfile();
-          if (result.success && result.data) {
-            setUser(result.data.user);
-          } else {
-            await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);
+        const accessToken = await AsyncStorage.getItem('accessToken');
+        const refreshToken = await AsyncStorage.getItem('refreshToken');
+
+        if (!accessToken && !refreshToken) {
+          setIsLoading(false);
+          return;
+        }
+
+        if (accessToken) {
+          try {
+            const result = await api.getProfile();
+            if (result.success && result.data) {
+              setUser(result.data.user);
+              setIsLoading(false);
+              return;
+            }
+          } catch (error: any) {
+            if (error.message?.includes('Session expired') || error.message?.includes('401')) {
+              if (refreshToken) {
+                try {
+                  const refreshed = await api.refreshAccessToken();
+                  if (refreshed) {
+                    const result = await api.getProfile();
+                    if (result.success && result.data) {
+                      setUser(result.data.user);
+                      setIsLoading(false);
+                      return;
+                    }
+                  }
+                } catch (refreshError) {
+                  console.error('Error refreshing token during session restore:', refreshError);
+                }
+              }
+            } else {
+              console.error('Error restoring session:', error);
+            }
+          }
+        } else if (refreshToken) {
+          try {
+            const refreshed = await api.refreshAccessToken();
+            if (refreshed) {
+              const result = await api.getProfile();
+              if (result.success && result.data) {
+                setUser(result.data.user);
+                setIsLoading(false);
+                return;
+              }
+            }
+          } catch (refreshError) {
+            console.error('Error refreshing token during session restore:', refreshError);
           }
         }
+
+        await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);
       } catch (error) {
         console.error('Error restoring session:', error);
         await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);

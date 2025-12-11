@@ -30,7 +30,7 @@ const features = [
     icon: TrendingUp,
     title: "What Makes It Special",
     description:
-      "Offline-first design means you can log meals anywhere, anytime. Beautiful dashboard insights, customizable reminders, and streak tracking keep you motivated and engaged.",
+      "Cloud-based storage means your data is safe and accessible from any device. Log in from your phone, tablet, or web browser—all your meals, streaks, and progress are always available. Beautiful dashboard insights, customizable reminders, and streak tracking keep you motivated and engaged.",
     color: "from-green-500 to-emerald-500",
   },
 ];

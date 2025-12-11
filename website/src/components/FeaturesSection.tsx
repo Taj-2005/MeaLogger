@@ -1,15 +1,15 @@
 "use client";
 
+import { fadeInUp, staggerContainer } from "@/lib/animations";
 import { motion } from "framer-motion";
 import {
-  Camera,
-  Bell,
-  WifiOff,
-  TrendingUp,
-  User,
-  Palette,
+    Bell,
+    Camera,
+    Cloud,
+    Palette,
+    TrendingUp,
+    User,
 } from "lucide-react";
-import { fadeInUp, staggerContainer } from "@/lib/animations";
 
 const features = [
   {
@@ -27,10 +27,10 @@ const features = [
     color: "from-purple-500 to-pink-500",
   },
   {
-    icon: WifiOff,
-    title: "Offline First",
+    icon: Cloud,
+    title: "Cloud Sync",
     description:
-      "Works completely offline. Log meals anywhere, anytime—even without internet connection.",
+      "Your data is safely stored in the cloud. Log in from any device—phone, tablet, or web—and access your complete meal history. Never lose your data.",
     color: "from-green-500 to-emerald-500",
   },
   {
@@ -58,7 +58,7 @@ const features = [
 
 export default function FeaturesSection() {
   return (
-    <section className="py-24 bg-white">
+    <section id="features" className="py-24 bg-white scroll-mt-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"

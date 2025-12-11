@@ -18,8 +18,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
-import { CachedMeal, OfflineStorage } from '../../services/offlineStorage';
-import { useNetworkStatus } from '../../utils/network';
 import MealCard from '../components/MealCard';
 import PrimaryButton from '../components/PrimaryButton';
 
@@ -39,14 +37,12 @@ export default function TimelineScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const networkState = useNetworkStatus();
 
   const [meals, setMeals] = useState<Meal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -55,14 +51,6 @@ export default function TimelineScreen() {
 
     return () => clearInterval(interval);
   }, []);
-
-  // Sync when network comes back
-  useEffect(() => {
-    if (networkState.isConnected && networkState.isInternetReachable) {
-      // Network restored, try to sync
-      loadMeals(false);
-    }
-  }, [networkState.isConnected, networkState.isInternetReachable]);
 
   useFocusEffect(
     useCallback(() => {
@@ -74,30 +62,6 @@ export default function TimelineScreen() {
     try {
       if (showLoading) setIsLoading(true);
 
-      // Load from cache first for instant display
-      const cachedMeals = await OfflineStorage.getMeals();
-      if (cachedMeals.length > 0) {
-        const cachedMealsData: Meal[] = cachedMeals.map((meal: CachedMeal) => ({
-          _id: meal._id || meal.localId || '',
-          title: meal.title,
-          type: meal.type,
-          date: meal.date,
-          calories: meal.calories,
-          imageUrl: meal.imageUrl,
-          createdAt: meal.createdAt,
-        }));
-
-        cachedMealsData.sort((a, b) => {
-          const dateA = new Date(a.createdAt).getTime();
-          const dateB = new Date(b.createdAt).getTime();
-          return dateB - dateA;
-        });
-
-        setMeals(cachedMealsData);
-        setIsOffline(!networkState.isConnected);
-      }
-
-      // Try to fetch from server
       const result = await api.getMeals(1, 50);
 
       if (result.success && result.data) {
@@ -118,14 +82,9 @@ export default function TimelineScreen() {
         });
 
         setMeals(mealsData);
-        setIsOffline(false);
       }
     } catch (error: any) {
       console.error('Error loading meals:', error);
-      // If offline, keep showing cached meals
-      if (error.message?.includes('No internet') || error.message?.includes('queued')) {
-        setIsOffline(true);
-      }
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -148,14 +107,7 @@ export default function TimelineScreen() {
       await loadMeals(false);
     } catch (error: any) {
       console.error('Error deleting meal:', error);
-      // If offline, the meal is already removed from cache
-      if (error.message?.includes('queued') || error.message?.includes('sync')) {
-        // Meal was queued for deletion, reload to show updated state
-        await loadMeals(false);
-      } else {
-        // Restore meals on error
-        loadMeals();
-      }
+      Alert.alert('Error', 'Failed to delete meal. Please try again.');
     }
   };
 
@@ -189,15 +141,15 @@ export default function TimelineScreen() {
   };
 
   const renderMealItem = ({ item }: { item: Meal }) => (
-    <MealCard
-      title={item.title}
-      type={item.type}
-      date={item.date}
-      calories={item.calories}
-      imageUrl={item.imageUrl}
-      onPress={() => openImageModal(item.imageUrl)}
-      onDelete={() => handleDeleteMeal(item)}
-    />
+              <MealCard
+                title={item.title}
+                type={item.type}
+                date={item.date}
+                calories={item.calories}
+                imageUrl={item.imageUrl}
+                onPress={() => openImageModal(item.imageUrl)}
+                onDelete={() => handleDeleteMeal(item)}
+              />
   );
 
   const renderEmptyState = () => (
@@ -260,14 +212,6 @@ export default function TimelineScreen() {
               My Meals
             </Text>
           </View>
-          {isOffline && (
-            <View className="flex-row items-center px-3 py-1.5 rounded-full" style={{ backgroundColor: `${colors.warning}20` }}>
-              <Ionicons name="cloud-offline-outline" size={16} color={colors.warning} />
-              <Text className="text-xs font-medium ml-1.5" style={{ color: colors.warning }}>
-                Offline
-              </Text>
-            </View>
-          )}
         </View>
 
         {/* Stats Row */}

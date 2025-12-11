@@ -15,6 +15,8 @@ export interface CachedMeal {
   updatedAt?: string;
   isLocal?: boolean; // True if created offline and not yet synced
   localId?: string; // Temporary ID for offline-created meals
+  syncStatus?: 'pending' | 'syncing' | 'synced' | 'failed'; // Sync status for UI
+  pending?: boolean; // Alias for isLocal, for UI compatibility
 }
 
 export class OfflineStorage {

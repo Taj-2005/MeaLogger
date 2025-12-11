@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { fadeInUp } from "@/lib/animations";
+import { motion } from "framer-motion";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -16,7 +17,14 @@ export default function Footer() {
         >
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
-              <h3 className="text-2xl font-bold text-white mb-4">
+              <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+                <Image
+                  src="/logo.png"
+                  alt="MealLogger Logo"
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                />
                 MealLogger
               </h3>
               <p className="text-gray-400">
