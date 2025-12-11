@@ -101,6 +101,24 @@ MealLogger addresses these pain points through:
 - **Cloud Storage**: Cloudinary for image storage and CDN delivery
 - **Language**: TypeScript 5.8.3
 
+### Marketing Website Stack
+
+- **Framework**: Next.js 15+ (React-based SSR framework)
+- **Styling**: Tailwind CSS with custom animations
+- **Animations**: Framer Motion for smooth transitions and scroll effects
+- **Components**: Modular component architecture (Hero, Features, How It Works, Download, Footer)
+- **Image Optimization**: Next.js Image component with automatic optimization
+- **Navigation**: Smooth scroll navigation with anchor links
+- **UI/UX**: Modern gradient designs, responsive layouts, interactive elements
+- **Features**:
+  - Hero section with animated mobile mockup showcasing app screenshots
+  - Feature showcase with icon-based cards
+  - Step-by-step "How It Works" section
+  - Download section with installation instructions
+  - Footer with logo, navigation links, and copyright
+  - Smooth scrolling between sections
+  - Responsive design for all screen sizes
+
 ### Backend Stack
 
 - **Runtime**: Node.js 18+
@@ -178,6 +196,7 @@ MealLogger addresses these pain points through:
 ### Frontend Development
 
 - React Native development with Expo
+- Next.js website development with SSR and static generation
 - TypeScript for type safety
 - Component-based architecture
 - State management with Context API
@@ -185,6 +204,9 @@ MealLogger addresses these pain points through:
 - Cross-platform compatibility (iOS, Android, Web)
 - Native module integration (Camera, Notifications)
 - Performance optimization
+- Framer Motion animations and scroll effects
+- Modern UI/UX design with Tailwind CSS
+- Smooth scroll navigation implementation
 - Cloud-based data persistence and synchronization
 - Cross-device authentication and session management
 - Secure API design for multi-platform access
@@ -245,10 +267,13 @@ MealLogger addresses these pain points through:
 ### Technical Skills Acquired
 
 - Mastered React Native and Expo ecosystem
+- Built marketing website with Next.js and modern web technologies
+- Implemented smooth scroll navigation and animations with Framer Motion
+- Created responsive, animated UI components with Tailwind CSS
 - Implemented secure authentication systems
 - Integrated third-party services (Cloudinary)
 - Designed and developed RESTful APIs
-- Deployed serverless applications
+- Deployed serverless applications (API + Website on Vercel)
 - Implemented notification systems
 - Optimized for cross-platform compatibility
 - Built cloud-based data persistence with MongoDB Atlas
@@ -271,6 +296,9 @@ MealLogger addresses these pain points through:
 - Built robust API with error handling and retry mechanisms
 - Created scalable database schema for meal tracking
 - Designed image storage system with CDN for global performance
+- Developed marketing website with smooth navigation and engaging animations
+- Implemented responsive design for optimal viewing across all devices
+- Created interactive UI components with scroll-triggered animations
 
 ## Project Highlights for Resume
 
@@ -284,6 +312,7 @@ MealLogger addresses these pain points through:
 - **Serverless deployment** on Vercel
 - **TypeScript** for type-safe development
 - **Modern UI/UX** with NativeWind and responsive design
+- **Marketing website** built with Next.js, featuring animated hero section, feature showcase, and smooth navigation
 - **Cloud-based architecture** with secure data storage and real-time synchronization
 - **Cross-device access** - log in from any device to access your complete meal history
 - **Data safety** - all meals stored securely in cloud database with automatic backups
@@ -315,7 +344,7 @@ MealLogger addresses these pain points through:
 
 ## Technologies Used (ATS Keywords)
 
-**Frontend**: React Native, Expo, TypeScript, JavaScript, React, NativeWind, Tailwind CSS, Ionicons, AsyncStorage, Expo Router, React Context API, Expo Camera, Expo Image Picker, Expo Notifications
+**Frontend**: React Native, Expo, Next.js, TypeScript, JavaScript, React, NativeWind, Tailwind CSS, Framer Motion, Ionicons, AsyncStorage, Expo Router, React Context API, Expo Camera, Expo Image Picker, Expo Notifications
 
 **Backend**: Node.js, Express.js, MongoDB, Mongoose, JWT, bcrypt, Cloudinary, express-validator, Winston, Morgan, Jest, Supertest
 
@@ -323,20 +352,21 @@ MealLogger addresses these pain points through:
 
 **Tools**: ESLint, Prettier, Postman, VS Code, Terminal, npm
 
-**Concepts**: RESTful API, Authentication, Authorization, State Management, Component Architecture, Responsive Design, Cross-Platform Development, Serverless Architecture, Database Design, API Integration, Error Handling, Logging, Testing, CI/CD, Cloud Data Persistence, Cross-Device Synchronization, Real-Time Updates, Secure Authentication, CDN Integration, Database Backups, Multi-Platform Access
+**Concepts**: RESTful API, Authentication, Authorization, State Management, Component Architecture, Responsive Design, Cross-Platform Development, Serverless Architecture, Database Design, API Integration, Error Handling, Logging, Testing, CI/CD, Cloud Data Persistence, Cross-Device Synchronization, Real-Time Updates, Secure Authentication, CDN Integration, Database Backups, Multi-Platform Access, Server-Side Rendering (SSR), Static Site Generation (SSG), Smooth Scroll Navigation, Animation Libraries, Marketing Website Development
 
 ## Project Statistics
 
 - **Total Development Time**: [Your estimated time]
-- **Lines of Code**: ~18,000+ (Frontend + Backend)
-- **Components Created**: 12+ reusable components
+- **Lines of Code**: ~20,000+ (Frontend + Backend + Website)
+- **Components Created**: 15+ reusable components (Mobile App + Website)
+- **Website Components**: Hero, Features, How It Works, Download, Footer, About sections
 - **API Endpoints**: 20+ RESTful endpoints
 - **Database Models**: 4 (User, Meal, Reminder, Settings)
-- **Cloud Services**: MongoDB Atlas (Database), Cloudinary (Image CDN), Vercel (Serverless API)
+- **Cloud Services**: MongoDB Atlas (Database), Cloudinary (Image CDN), Vercel (Serverless API + Website)
 - **Cross-Device Features**: Multi-platform authentication, real-time sync, secure data access
 - **Test Coverage**: Integration tests for critical flows
-- **Platforms Supported**: iOS, Android, Web
-- **Deployment**: Production-ready on Vercel
+- **Platforms Supported**: iOS, Android, Web (Mobile App + Marketing Website)
+- **Deployment**: Production-ready on Vercel (API + Website)
 - **Cloud Storage**: 100% data stored securely in cloud with automatic backups
 
 ## Future Enhancements
@@ -350,4 +380,4 @@ MealLogger addresses these pain points through:
 
 ---
 
-**This project demonstrates proficiency in modern full-stack development, mobile application development, API design, cloud services integration, and production deployment. It showcases the ability to identify user problems, design solutions, and implement scalable, maintainable code with robust cloud-based data persistence. The system ensures users never lose their data - all meals, streaks, and progress are securely stored in the cloud and accessible from any device. Users can seamlessly log in from their phone, tablet, or web browser to access their complete meal history, with real-time synchronization ensuring data consistency across all platforms.**
+**This project demonstrates proficiency in modern full-stack development, mobile application development, web development with Next.js, API design, cloud services integration, and production deployment. It showcases the ability to identify user problems, design solutions, and implement scalable, maintainable code with robust cloud-based data persistence. The project includes both a production-ready mobile application and a modern marketing website built with Next.js, featuring smooth animations, responsive design, and intuitive navigation. The system ensures users never lose their data - all meals, streaks, and progress are securely stored in the cloud and accessible from any device. Users can seamlessly log in from their phone, tablet, or web browser to access their complete meal history, with real-time synchronization ensuring data consistency across all platforms.**
