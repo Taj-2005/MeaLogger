@@ -1,9 +1,10 @@
+import * as Notifications from 'expo-notifications';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
+import { syncService } from '../services/syncService';
 import { requestNotificationPermissions } from '../utils/notifications';
 import './global.css';
 
@@ -69,11 +70,23 @@ function NotificationSetup() {
   return null;
 }
 
+function SyncServiceSetup() {
+  useEffect(() => {
+    syncService.start();
+    return () => {
+      syncService.stop();
+    };
+  }, []);
+
+  return null;
+}
+
 export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <NotificationSetup />
+        <SyncServiceSetup />
         <ProtectedRoute>
           <Slot />
         </ProtectedRoute>

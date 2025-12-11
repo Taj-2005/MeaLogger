@@ -17,7 +17,7 @@ export default function GreetingHeader() {
   const firstName = user?.name?.split(' ')[0] || 'there';
 
   return (
-    <View className="px-5 pt-4 pb-6">
+    <View className="px-5 pt-16 pb-6">
       <Text
         className="text-3xl font-bold tracking-tight"
         style={{ color: colors.textPrimary }}

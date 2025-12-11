@@ -1,25 +1,25 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  Image,
-  ActivityIndicator,
-  ScrollView,
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
+    Alert,
+    Dimensions,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import * as Haptics from 'expo-haptics';
-import { Picker } from '@react-native-picker/picker';
-import { useRouter } from 'expo-router';
-import { api } from '../../services/api';
 import { useTheme } from '../../contexts/ThemeContext';
+import { api } from '../../services/api';
+import { useNetworkStatus } from '../../utils/network';
 import PrimaryButton from '../components/PrimaryButton';
 
 const { width } = Dimensions.get('window');
@@ -28,6 +28,7 @@ export default function MealLoggingScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const networkState = useNetworkStatus();
 
   const [title, setTitle] = useState('');
   const [mealType, setMealType] = useState('breakfast');
@@ -87,12 +88,42 @@ export default function MealLoggingScreen() {
         setDate(new Date().toISOString().split('T')[0]);
         setCalories('');
         setCapturedImage(null);
-        router.push('./timeline');
+        
+        // Show success message
+        const isOffline = result.message?.toLowerCase().includes('offline') || 
+                         result.message?.toLowerCase().includes('sync') ||
+                         result.data?.meal?.isLocal;
+        if (isOffline) {
+          Alert.alert(
+            'Meal Saved Offline',
+            'Your meal has been saved locally and will sync when you have internet connection.',
+            [{ text: 'OK', onPress: () => router.push('./timeline') }]
+          );
+        } else {
+          router.push('./timeline');
+        }
+      } else {
+        throw new Error(result.message || 'Failed to save meal');
       }
     } catch (error: any) {
       console.error('Error saving meal:', error);
-      setError(error.message || 'Failed to save meal. Please try again.');
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      const errorMessage = error?.message || 'Failed to save meal. Please try again.';
+      
+      // Check if it's a network error that should have been handled offline
+      const isNetworkError = errorMessage.toLowerCase().includes('network') ||
+                            errorMessage.toLowerCase().includes('request failed') ||
+                            errorMessage.toLowerCase().includes('fetch');
+      
+      if (isNetworkError) {
+        Alert.alert(
+          'Connection Issue',
+          'Unable to connect to server. Please check your internet connection. Your meal will be saved offline when you try again.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        setError(errorMessage);
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -118,18 +149,28 @@ export default function MealLoggingScreen() {
             paddingTop: insets.top + 20,
           }}
         >
-          <View className="mb-4 flex-row items-center">
-            <Image
-              source={require('../../assets/logo.png')}
-              style={{ width: 32, height: 32, marginRight: 12 }}
-              resizeMode="contain"
-            />
-            <Text
-              className="text-2xl font-bold"
-              style={{ color: colors.textPrimary }}
-            >
-              Log Your Meal
-            </Text>
+          <View className="mb-4 flex-row items-center justify-between">
+            <View className="flex-row items-center">
+              <Image
+                source={require('../../assets/logo.png')}
+                style={{ width: 32, height: 32, marginRight: 12 }}
+                resizeMode="contain"
+              />
+              <Text
+                className="text-2xl font-bold"
+                style={{ color: colors.textPrimary }}
+              >
+                Log Your Meal
+              </Text>
+            </View>
+            {!networkState.isConnected && (
+              <View className="flex-row items-center px-3 py-1.5 rounded-full" style={{ backgroundColor: `${colors.warning}20` }}>
+                <Ionicons name="cloud-offline-outline" size={16} color={colors.warning} />
+                <Text className="text-xs font-medium ml-1.5" style={{ color: colors.warning }}>
+                  Offline
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -353,6 +394,27 @@ export default function MealLoggingScreen() {
               </Text>
             </View>
           ) : null}
+
+          {/* Offline Notice */}
+          {!networkState.isConnected && (
+            <View
+              className="rounded-xl px-4 py-3 mb-4 flex-row items-center"
+              style={{ backgroundColor: `${colors.warning}15` }}
+            >
+              <Ionicons
+                name="information-circle"
+                size={18}
+                color={colors.warning}
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                className="text-sm flex-1"
+                style={{ color: colors.warning }}
+              >
+                You're offline. Meal will be saved locally and synced when connection is restored.
+              </Text>
+            </View>
+          )}
 
           {/* Save Button */}
           <PrimaryButton

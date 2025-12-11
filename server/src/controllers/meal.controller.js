@@ -8,9 +8,16 @@ const createMeal = async (req, res) => {
 
     logger.info('Create meal request', {
       hasFile: !!req.file,
+      fileSize: req.file?.size,
+      fileMimetype: req.file?.mimetype,
       title,
       type,
+      date,
+      calories,
+      hasImageUrl: !!imageUrl,
       userId: req.userId,
+      contentType: req.headers['content-type'],
+      bodyKeys: Object.keys(req.body || {}),
     });
 
     let finalImageUrl = imageUrl;

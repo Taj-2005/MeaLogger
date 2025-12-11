@@ -82,7 +82,7 @@ const SettingsScreen = () => {
   };
 
   const handleLogout = () => {
-    const isWeb = typeof window !== 'undefined';
+    const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.confirm === 'function';
     const confirmed = isWeb
       ? window.confirm('Are you sure you want to logout?')
       : new Promise<boolean>((resolve) => {
@@ -334,7 +334,7 @@ const SettingsScreen = () => {
                   className="text-base"
                   style={{ color: colors.textSecondary }}
                 >
-                  Version 2.0.0
+                  Version 1.0.0
                 </Text>
               </View>
 

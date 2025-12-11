@@ -92,7 +92,7 @@ export default function Profile() {
   };
 
   const handleLogout = async () => {
-    const isWeb = typeof window !== 'undefined';
+    const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.confirm === 'function';
     const confirmed = isWeb
       ? window.confirm('Are you sure you want to logout?')
       : await new Promise<boolean>((resolve) => {

@@ -1,21 +1,25 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-  ActivityIndicator,
-  Modal,
-  Dimensions,
-  Image,
-} from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { api } from '../../services/api';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    FlatList,
+    Image,
+    Modal,
+    Platform,
+    RefreshControl,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
+import { api } from '../../services/api';
+import { CachedMeal, OfflineStorage } from '../../services/offlineStorage';
+import { useNetworkStatus } from '../../utils/network';
 import MealCard from '../components/MealCard';
 import PrimaryButton from '../components/PrimaryButton';
 
@@ -35,12 +39,14 @@ export default function TimelineScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const networkState = useNetworkStatus();
 
   const [meals, setMeals] = useState<Meal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -49,6 +55,14 @@ export default function TimelineScreen() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Sync when network comes back
+  useEffect(() => {
+    if (networkState.isConnected && networkState.isInternetReachable) {
+      // Network restored, try to sync
+      loadMeals(false);
+    }
+  }, [networkState.isConnected, networkState.isInternetReachable]);
 
   useFocusEffect(
     useCallback(() => {
@@ -60,6 +74,30 @@ export default function TimelineScreen() {
     try {
       if (showLoading) setIsLoading(true);
 
+      // Load from cache first for instant display
+      const cachedMeals = await OfflineStorage.getMeals();
+      if (cachedMeals.length > 0) {
+        const cachedMealsData: Meal[] = cachedMeals.map((meal: CachedMeal) => ({
+          _id: meal._id || meal.localId || '',
+          title: meal.title,
+          type: meal.type,
+          date: meal.date,
+          calories: meal.calories,
+          imageUrl: meal.imageUrl,
+          createdAt: meal.createdAt,
+        }));
+
+        cachedMealsData.sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return dateB - dateA;
+        });
+
+        setMeals(cachedMealsData);
+        setIsOffline(!networkState.isConnected);
+      }
+
+      // Try to fetch from server
       const result = await api.getMeals(1, 50);
 
       if (result.success && result.data) {
@@ -80,9 +118,14 @@ export default function TimelineScreen() {
         });
 
         setMeals(mealsData);
+        setIsOffline(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading meals:', error);
+      // If offline, keep showing cached meals
+      if (error.message?.includes('No internet') || error.message?.includes('queued')) {
+        setIsOffline(true);
+      }
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -96,6 +139,7 @@ export default function TimelineScreen() {
 
   const deleteMeal = async (mealId: string) => {
     try {
+      // Optimistic update
       const updatedMeals = meals.filter((meal) => meal._id !== mealId);
       setMeals(updatedMeals);
 
@@ -104,12 +148,19 @@ export default function TimelineScreen() {
       await loadMeals(false);
     } catch (error: any) {
       console.error('Error deleting meal:', error);
-      loadMeals();
+      // If offline, the meal is already removed from cache
+      if (error.message?.includes('queued') || error.message?.includes('sync')) {
+        // Meal was queued for deletion, reload to show updated state
+        await loadMeals(false);
+      } else {
+        // Restore meals on error
+        loadMeals();
+      }
     }
   };
 
   const handleDeleteMeal = (meal: Meal) => {
-    const isWeb = typeof window !== 'undefined';
+    const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.confirm === 'function';
 
     if (isWeb) {
       const confirmed = window.confirm(`Are you sure you want to delete "${meal.title}"?`);
@@ -117,7 +168,6 @@ export default function TimelineScreen() {
         deleteMeal(meal._id);
       }
     } else {
-      const { Alert } = require('react-native');
       Alert.alert(
         'Delete Meal',
         `Are you sure you want to delete "${meal.title}"?`,
@@ -196,18 +246,28 @@ export default function TimelineScreen() {
           paddingTop: insets.top + 20,
         }}
       >
-        <View className="mb-4 flex-row items-center">
-          <Image
-            source={require('../../assets/logo.png')}
-            style={{ width: 32, height: 32, marginRight: 12 }}
-            resizeMode="contain"
-          />
-          <Text
-            className="text-2xl font-bold"
-            style={{ color: colors.textPrimary }}
-          >
-            My Meals
-          </Text>
+        <View className="mb-4 flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <Image
+              source={require('../../assets/logo.png')}
+              style={{ width: 32, height: 32, marginRight: 12 }}
+              resizeMode="contain"
+            />
+            <Text
+              className="text-2xl font-bold"
+              style={{ color: colors.textPrimary }}
+            >
+              My Meals
+            </Text>
+          </View>
+          {isOffline && (
+            <View className="flex-row items-center px-3 py-1.5 rounded-full" style={{ backgroundColor: `${colors.warning}20` }}>
+              <Ionicons name="cloud-offline-outline" size={16} color={colors.warning} />
+              <Text className="text-xs font-medium ml-1.5" style={{ color: colors.warning }}>
+                Offline
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Stats Row */}
