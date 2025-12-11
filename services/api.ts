@@ -3,7 +3,7 @@ import { isOnline } from '../utils/network';
 import { OfflineQueue } from './offlineQueue';
 import { CachedMeal, OfflineStorage } from './offlineStorage';
 
-const API_BASE_URL = 'http://localhost:4000/api/v1';
+const API_BASE_URL = 'https://mea-logger.vercel.app/api/v1';
 
 interface ApiResponse<T> {
   success: boolean;
