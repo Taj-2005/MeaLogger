@@ -4,26 +4,26 @@ import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
 import {
-  cancelReminderNotification,
-  checkNotificationPermissions,
-  requestNotificationPermissions,
-  rescheduleAllReminders,
-  scheduleReminderNotification,
+    cancelReminderNotification,
+    checkNotificationPermissions,
+    requestNotificationPermissions,
+    rescheduleAllReminders,
+    scheduleReminderNotification,
 } from '../../utils/notifications';
+import AppLogo from '../components/AppLogo';
 import PrimaryButton from '../components/PrimaryButton';
 
 type Reminder = {
@@ -234,11 +234,7 @@ export default function RemindersScreen() {
         }}
       >
         <View className="mb-4 flex-row items-center">
-          <Image
-            source={require('../../assets/logo.png')}
-            style={{ width: 32, height: 32, marginRight: 12 }}
-            resizeMode="contain"
-          />
+          <AppLogo size={32} style={{ marginRight: 12 }} />
           <Text
             className="text-2xl font-bold"
             style={{ color: colors.textPrimary }}

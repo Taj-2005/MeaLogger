@@ -4,16 +4,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import AppLogo from '../components/AppLogo';
 import PrimaryButton from '../components/PrimaryButton';
 
 export default function RegisterScreen() {
@@ -100,11 +100,7 @@ export default function RegisterScreen() {
               className="w-20 h-20 rounded-2xl items-center justify-center mb-6 overflow-hidden"
               style={{ backgroundColor: `${colors.primary}15` }}
             >
-              <Image 
-                source={require('../../assets/logo.png')} 
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="contain"
-              />
+              <AppLogo size={80} className="w-full h-full" />
             </View>
             <Text
               className="text-3xl font-bold mb-2"

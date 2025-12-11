@@ -5,7 +5,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
     Dimensions,
     Image,
     KeyboardAvoidingView,
@@ -19,6 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
+import AppLogo from '../components/AppLogo';
 import PrimaryButton from '../components/PrimaryButton';
 
 const { width } = Dimensions.get('window');
@@ -124,11 +124,7 @@ export default function MealLoggingScreen() {
         >
           <View className="mb-4 flex-row items-center justify-between">
             <View className="flex-row items-center">
-              <Image
-                source={require('../../assets/logo.png')}
-                style={{ width: 32, height: 32, marginRight: 12 }}
-                resizeMode="contain"
-              />
+              <AppLogo size={32} style={{ marginRight: 12 }} />
               <Text
                 className="text-2xl font-bold"
                 style={{ color: colors.textPrimary }}

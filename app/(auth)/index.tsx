@@ -1,16 +1,10 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  Dimensions,
-  TouchableOpacity,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
+import AppLogo from '../components/AppLogo';
 import PrimaryButton from '../components/PrimaryButton';
 
 const { width } = Dimensions.get('window');
@@ -67,11 +61,7 @@ export default function LandingScreen() {
           }}
         >
           <View className="items-center mb-12">
-            <Image
-              source={require('../../assets/logo.png')}
-              style={{ width: 120, height: 120, marginBottom: 24 }}
-              resizeMode="contain"
-            />
+            <AppLogo size={120} style={{ marginBottom: 24 }} />
             <Text
               className="text-4xl font-bold text-center mb-4"
               style={{ color: colors.textPrimary }}

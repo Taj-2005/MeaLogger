@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
+import AppLogo from '../components/AppLogo';
 import MealCard from '../components/MealCard';
 import PrimaryButton from '../components/PrimaryButton';
 
@@ -200,11 +201,7 @@ export default function TimelineScreen() {
       >
         <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
-            <Image
-              source={require('../../assets/logo.png')}
-              style={{ width: 32, height: 32, marginRight: 12 }}
-              resizeMode="contain"
-            />
+            <AppLogo size={32} style={{ marginRight: 12 }} />
             <Text
               className="text-2xl font-bold"
               style={{ color: colors.textPrimary }}

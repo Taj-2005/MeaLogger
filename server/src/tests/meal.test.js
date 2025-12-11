@@ -153,6 +153,91 @@ describe('Meal API', () => {
     });
   });
 
+  describe('GET /api/v1/meals/upload-signature', () => {
+    it('should get upload signature successfully', async () => {
+      const response = await request(app)
+        .get('/api/v1/meals/upload-signature')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('signature');
+      expect(response.body.data).toHaveProperty('timestamp');
+      expect(response.body.data).toHaveProperty('folder');
+      expect(response.body.data).toHaveProperty('publicId');
+      expect(response.body.data).toHaveProperty('cloudName');
+      expect(response.body.data).toHaveProperty('apiKey');
+      expect(response.body.data).toHaveProperty('uploadUrl');
+    });
+
+    it('should fail without authentication', async () => {
+      const response = await request(app).get('/api/v1/meals/upload-signature');
+
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should not match /:id route (route ordering test)', async () => {
+      // This test ensures that /upload-signature doesn't get matched by /:id
+      // If it did, Mongoose would try to cast "upload-signature" as ObjectId and fail
+      const response = await request(app)
+        .get('/api/v1/meals/upload-signature')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      // Should return 200 with signature data, not 400/500 with ObjectId cast error
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.signature).toBeDefined();
+    });
+  });
+
+  describe('GET /api/v1/meals/:id', () => {
+    let mealId;
+
+    beforeEach(async () => {
+      const meal = await Meal.create({
+        user: userId,
+        title: 'Test Meal',
+        type: 'breakfast',
+        date: new Date(),
+        imageUrl: 'https://example.com/image.jpg',
+      });
+      mealId = meal._id;
+    });
+
+    it('should get meal by id successfully', async () => {
+      const response = await request(app)
+        .get(`/api/v1/meals/${mealId}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.meal).toHaveProperty('id', mealId.toString());
+      expect(response.body.data.meal.title).toBe('Test Meal');
+    });
+
+    it('should return 400 for invalid ObjectId format', async () => {
+      const response = await request(app)
+        .get('/api/v1/meals/invalid-id-format')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Invalid meal ID format');
+    });
+
+    it('should return 404 for non-existent meal', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const response = await request(app)
+        .get(`/api/v1/meals/${fakeId}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Meal not found');
+    });
+  });
+
   describe('DELETE /api/v1/meals/:id', () => {
     let mealId;
 

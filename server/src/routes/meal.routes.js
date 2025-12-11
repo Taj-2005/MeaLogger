@@ -36,14 +36,17 @@ router.post(
 
 router.get('/', mealController.getMeals);
 
+// IMPORTANT: Specific routes must be defined BEFORE dynamic routes (/:id)
+// Otherwise Express will match /upload-signature to /:id route
+router.get('/upload-signature', mealController.getUploadSignature);
+
+router.post('/bulk', mealController.bulkCreateMeals);
+
+// Dynamic routes must be defined AFTER all specific routes
 router.get('/:id', mealController.getMeal);
 
 router.put('/:id', upload.single('image'), mealController.updateMeal);
 
 router.delete('/:id', mealController.deleteMeal);
-
-router.post('/bulk', mealController.bulkCreateMeals);
-
-router.get('/upload-signature', mealController.getUploadSignature);
 
 module.exports = router;

@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-  ScrollView,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import SettingsButton from '../components/SettingsBtn';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
+import AppLogo from '../components/AppLogo';
 import PrimaryButton from '../components/PrimaryButton';
+import SettingsButton from '../components/SettingsBtn';
 
 export default function Profile() {
   const { user, logout, refreshUser } = useAuth();
@@ -138,11 +138,7 @@ export default function Profile() {
         }}
       >
         <View className="flex-row items-center">
-          <Image
-            source={require('../../assets/logo.png')}
-            style={{ width: 32, height: 32, marginRight: 12 }}
-            resizeMode="contain"
-          />
+          <AppLogo size={32} style={{ marginRight: 12 }} />
           <Text
             className="text-2xl font-bold"
             style={{ color: colors.textPrimary }}

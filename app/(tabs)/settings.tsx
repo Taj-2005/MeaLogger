@@ -2,22 +2,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Modal,
-  Platform,
-  ScrollView,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Modal,
+    Platform,
+    ScrollView,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
 import { checkNotificationPermissions, requestNotificationPermissions } from '../../utils/notifications';
+import AppLogo from '../components/AppLogo';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -185,11 +185,7 @@ const SettingsScreen = () => {
           paddingTop: insets.top + 20,
         }}
       >
-        <Image
-          source={require('../../assets/logo.png')}
-          style={{ width: 32, height: 32, marginRight: 12 }}
-          resizeMode="contain"
-        />
+        <AppLogo size={32} style={{ marginRight: 12 }} />
         <Text
           className="text-2xl font-bold"
           style={{ color: colors.textPrimary }}

@@ -19,31 +19,6 @@ app.set('trust proxy', 1);
 
 app.use(helmet());
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-
-      if (config.cors.origins.includes(origin) || config.nodeEnv === 'development') {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'Accept',
-      'X-Requested-With',
-      'Accept-Encoding',
-    ],
-    exposedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
-
-// Body parsing - skip for multipart/form-data (handled by multer)
 const jsonParser = express.json({ limit: '10mb' });
 const urlencodedParser = express.urlencoded({ extended: true, limit: '10mb' });
 

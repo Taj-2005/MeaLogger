@@ -1,4 +1,5 @@
 const Meal = require('../models/meal.model');
+const mongoose = require('mongoose');
 const { uploadImage, deleteImage } = require('../services/storage.service');
 const { generateUploadSignature } = require('../services/cloudinary-signature.service');
 const logger = require('../utils/logger');
@@ -164,8 +165,19 @@ const getMeals = async (req, res) => {
 
 const getMeal = async (req, res) => {
   try {
+    const { id } = req.params;
+
+    // Validate ObjectId format to prevent casting errors
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      logger.warn('Invalid meal ID format', { id, userId: req.userId });
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid meal ID format',
+      });
+    }
+
     const meal = await Meal.findOne({
-      _id: req.params.id,
+      _id: id,
       user: req.userId,
     }).select('-cloudinaryPublicId');
 
@@ -266,8 +278,19 @@ const updateMeal = async (req, res) => {
 
 const deleteMeal = async (req, res) => {
   try {
+    const { id } = req.params;
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      logger.warn('Invalid meal ID format for delete', { id, userId: req.userId });
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid meal ID format',
+      });
+    }
+
     const meal = await Meal.findOne({
-      _id: req.params.id,
+      _id: id,
       user: req.userId,
     });
 
