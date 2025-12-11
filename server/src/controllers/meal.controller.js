@@ -1,5 +1,6 @@
 const Meal = require('../models/meal.model');
 const { uploadImage, deleteImage } = require('../services/storage.service');
+const { generateUploadSignature } = require('../services/cloudinary-signature.service');
 const logger = require('../utils/logger');
 
 const createMeal = async (req, res) => {
@@ -33,17 +34,36 @@ const createMeal = async (req, res) => {
           });
         }
 
+        const uploadStartTime = Date.now();
+        logger.info('Starting Cloudinary upload', {
+          fileSize: req.file.size,
+          mimetype: req.file.mimetype,
+        });
+
         const uploadResult = await uploadImage(req.file.buffer, 'meal-logger/meals', {
           public_id: `meal_${req.userId}_${Date.now()}`,
         });
+        
+        const uploadDuration = Date.now() - uploadStartTime;
         finalImageUrl = uploadResult.url;
         cloudinaryPublicId = uploadResult.publicId;
-        logger.info('Image uploaded successfully', { url: finalImageUrl });
+        
+        logger.info('Image uploaded successfully', {
+          url: finalImageUrl,
+          duration: `${uploadDuration}ms`,
+          fileSize: req.file.size,
+        });
       } catch (uploadError) {
-        logger.error('Cloudinary upload error:', uploadError);
+        logger.error('Cloudinary upload error:', {
+          error: uploadError.message,
+          stack: uploadError.stack,
+          fileSize: req.file?.size,
+        });
         return res.status(500).json({
           success: false,
-          message: 'Failed to upload image. Please try again.',
+          message: uploadError.message?.includes('timeout') 
+            ? 'Image upload timed out. Please try again with a smaller image.'
+            : 'Failed to upload image. Please try again.',
         });
       }
     } else if (!imageUrl) {
@@ -326,6 +346,28 @@ const bulkCreateMeals = async (req, res) => {
   }
 };
 
+const getUploadSignature = async (req, res) => {
+  try {
+    const publicId = `meal_${req.userId}_${Date.now()}`;
+    const signatureData = generateUploadSignature(publicId, 'meal-logger/meals');
+
+    res.json({
+      success: true,
+      data: {
+        ...signatureData,
+        uploadUrl: `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/image/upload`,
+        eagerTransformation: 'w_1200,h_1200,c_limit,q_auto:good,f_auto',
+      },
+    });
+  } catch (error) {
+    logger.error('Get upload signature error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate upload signature. Please try again.',
+    });
+  }
+};
+
 module.exports = {
   createMeal,
   getMeals,
@@ -333,4 +375,5 @@ module.exports = {
   updateMeal,
   deleteMeal,
   bulkCreateMeals,
+  getUploadSignature,
 };

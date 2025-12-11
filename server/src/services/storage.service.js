@@ -18,21 +18,31 @@ const uploadImage = async (file, folder = 'meal-logger', options = {}) => {
     const uploadOptions = {
       folder,
       resource_type: 'image',
-      transformation: [
-        { width: 1200, height: 1200, crop: 'limit' },
-        { quality: 'auto' },
-        { fetch_format: 'auto' },
-      ],
+      chunk_size: 6000000,
+      timeout: 60000,
       ...options,
     };
 
     let uploadResult;
     if (Buffer.isBuffer(file)) {
       uploadResult = await new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
+        const uploadStream = cloudinary.uploader.upload_stream(
+          uploadOptions,
+          (error, result) => {
+            if (error) {
+              logger.error('Cloudinary upload stream error:', error);
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          }
+        );
+        
+        uploadStream.on('error', (error) => {
+          logger.error('Cloudinary stream error:', error);
+          reject(error);
         });
+        
         uploadStream.end(file);
       });
     } else {

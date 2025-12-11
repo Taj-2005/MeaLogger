@@ -44,4 +44,6 @@ router.delete('/:id', mealController.deleteMeal);
 
 router.post('/bulk', mealController.bulkCreateMeals);
 
+router.get('/upload-signature', mealController.getUploadSignature);
+
 module.exports = router;
