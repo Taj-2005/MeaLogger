@@ -12,13 +12,15 @@ export default function SettingsButton() {
   };
 
   return (
-    <TouchableOpacity onPress={goToSettings} activeOpacity={0.7}>
-      <View
-        className="p-2 rounded-full"
-        style={{ backgroundColor: colors.surface }}
-      >
-        <Ionicons name="settings" size={24} color={colors.textPrimary} />
-      </View>
+    <TouchableOpacity
+      onPress={goToSettings}
+      activeOpacity={0.7}
+      className="p-2 rounded-xl"
+      style={{
+        backgroundColor: `${colors.primary}10`,
+      }}
+    >
+      <Ionicons name="settings-outline" size={22} color={colors.primary} />
     </TouchableOpacity>
   );
 }

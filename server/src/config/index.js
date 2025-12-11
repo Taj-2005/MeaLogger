@@ -20,7 +20,7 @@ module.exports = {
       : ['http://localhost:3000', 'http://localhost:8081'],
   },
   rateLimit: {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   },
   logLevel: process.env.LOG_LEVEL || 'info',

@@ -10,7 +10,6 @@ describe('Auth API', () => {
   let refreshToken;
 
   beforeAll(async () => {
-    // Connect to test database
     const testUri = config.mongoUri.replace('meal-logger', 'meal-logger-test');
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect(testUri);
@@ -21,7 +20,6 @@ describe('Auth API', () => {
   });
 
   afterAll(async () => {
-    // Clean up
     await Settings.deleteMany({});
     await User.deleteMany({});
     if (mongoose.connection.readyState !== 0) {
@@ -30,7 +28,6 @@ describe('Auth API', () => {
   });
 
   beforeEach(async () => {
-    // Clear data before each test to avoid conflicts
     await Settings.deleteMany({});
     await User.deleteMany({});
     accessToken = undefined;
@@ -76,14 +73,12 @@ describe('Auth API', () => {
     });
 
     it('should fail with duplicate email', async () => {
-      // Create first user
       await request(app).post('/api/v1/auth/register').send({
         name: 'Test User',
         email: 'test@example.com',
         password: 'password123',
       });
 
-      // Try to create duplicate
       const response = await request(app).post('/api/v1/auth/register').send({
         name: 'Test User 2',
         email: 'test@example.com',
@@ -97,7 +92,6 @@ describe('Auth API', () => {
 
   describe('POST /api/v1/auth/login', () => {
     beforeEach(async () => {
-      // Create a test user
       await request(app).post('/api/v1/auth/register').send({
         name: 'Test User',
         email: 'test@example.com',
@@ -144,7 +138,6 @@ describe('Auth API', () => {
 
   describe('POST /api/v1/auth/refresh', () => {
     beforeEach(async () => {
-      // Create user and get tokens
       const registerResponse = await request(app).post('/api/v1/auth/register').send({
         name: 'Test User',
         email: 'test@example.com',
@@ -177,7 +170,6 @@ describe('Auth API', () => {
 
   describe('POST /api/v1/auth/logout', () => {
     beforeEach(async () => {
-      // Create user and get tokens
       const registerResponse = await request(app).post('/api/v1/auth/register').send({
         name: 'Test User',
         email: 'test@example.com',

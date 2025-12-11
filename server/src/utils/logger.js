@@ -3,13 +3,10 @@ const config = require('../config');
 const path = require('path');
 const fs = require('fs');
 
-// Check if running in serverless (Vercel)
 const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-// Simple logger - works in all environments
 const transports = [];
 
-// Only add file transports if not in serverless (Vercel captures console.log)
 if (!isServerless) {
   const logsDir = path.join(__dirname, '../../logs');
   if (!fs.existsSync(logsDir)) {
@@ -27,7 +24,6 @@ if (!isServerless) {
   );
 }
 
-// Console output (always show - Vercel captures this automatically)
 transports.push(
   new winston.transports.Console({
     format: winston.format.combine(

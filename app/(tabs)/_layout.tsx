@@ -4,17 +4,29 @@ import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const RootLayout = () => {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <Tabs
       screenOptions={({ route }) => ({
-        tabBarActiveTintColor: isDark ? '#60a5fa' : '#2563eb',
-        tabBarInactiveTintColor: isDark ? '#9ca3af' : '#6b7280',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: isDark ? '#1f2937' : '#ffffff',
-          borderTopColor: isDark ? '#374151' : '#e5e7eb',
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+          shadowColor: colors.shadow,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
         },
         headerShown: false,
       })}
@@ -58,16 +70,16 @@ const RootLayout = () => {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="user" size={size} color={color} />
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          href: null, // Hide from tab bar
+          title: "Settings",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

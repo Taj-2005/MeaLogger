@@ -5,7 +5,6 @@ const User = require('../models/user.model');
 const Meal = require('../models/meal.model');
 const Settings = require('../models/settings.model');
 
-// Simple logger for seed script
 const logger = {
   info: (...args) => console.log('[INFO]', ...args),
   error: (...args) => console.error('[ERROR]', ...args),
@@ -13,17 +12,14 @@ const logger = {
 
 const seedDatabase = async () => {
   try {
-    // Connect to MongoDB
     await mongoose.connect(config.mongoUri);
     logger.info('Connected to MongoDB');
 
-    // Clear existing data
     await User.deleteMany({});
     await Meal.deleteMany({});
     await Settings.deleteMany({});
     logger.info('Cleared existing data');
 
-    // Create test user
     const passwordHash = await bcrypt.hash('password123', 10);
     const user = new User({
       name: 'Test User',
@@ -32,7 +28,6 @@ const seedDatabase = async () => {
     });
     await user.save();
 
-    // Create settings for user
     const settings = new Settings({
       user: user._id,
       darkMode: false,
@@ -50,7 +45,6 @@ const seedDatabase = async () => {
 
     logger.info('Created test user:', { userId: user._id, email: user.email });
 
-    // Create sample meals
     const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
     const mealTitles = [
       'Scrambled Eggs & Toast',
@@ -95,5 +89,4 @@ const seedDatabase = async () => {
   }
 };
 
-// Run seed
 seedDatabase();

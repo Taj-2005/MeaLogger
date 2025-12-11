@@ -14,7 +14,7 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const token = authHeader.substring(7);
 
     try {
       const decoded = jwt.verify(token, config.jwt.secret);

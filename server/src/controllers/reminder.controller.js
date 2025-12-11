@@ -1,7 +1,6 @@
 const Reminder = require('../models/reminder.model');
 const logger = require('../utils/logger');
 
-// Create reminder
 const createReminder = async (req, res) => {
   try {
     const { title, mealType, hour, minute, enabled } = req.body;
@@ -44,7 +43,6 @@ const createReminder = async (req, res) => {
   }
 };
 
-// Get all reminders for user
 const getReminders = async (req, res) => {
   try {
     const reminders = await Reminder.find({ user: req.userId }).sort({ createdAt: -1 });
@@ -64,7 +62,6 @@ const getReminders = async (req, res) => {
   }
 };
 
-// Get single reminder
 const getReminder = async (req, res) => {
   try {
     const reminder = await Reminder.findOne({
@@ -94,7 +91,6 @@ const getReminder = async (req, res) => {
   }
 };
 
-// Update reminder
 const updateReminder = async (req, res) => {
   try {
     const { title, mealType, hour, minute, enabled } = req.body;
@@ -111,7 +107,6 @@ const updateReminder = async (req, res) => {
       });
     }
 
-    // Update fields
     if (title) reminder.title = title;
     if (mealType !== undefined) reminder.mealType = mealType;
     if (hour !== undefined) reminder.hour = hour;
@@ -146,7 +141,6 @@ const updateReminder = async (req, res) => {
   }
 };
 
-// Delete reminder
 const deleteReminder = async (req, res) => {
   try {
     const reminder = await Reminder.findOne({

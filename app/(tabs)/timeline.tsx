@@ -1,51 +1,40 @@
-import React, { useState, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  Image, 
-  TouchableOpacity, 
-  Alert, 
+import React, { useState, useCallback, useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
   Modal,
-  Dimensions
+  Dimensions,
+  Image,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { auth, db } from '../../firebaseConfig';
-import { fetchMealsFromFirestore } from '../../firebaseHelpers';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { api } from '../../services/api';
 import { useTheme } from '../../contexts/ThemeContext';
-import SettingsButton from '../components/SettingsBtn';
+import MealCard from '../components/MealCard';
+import PrimaryButton from '../components/PrimaryButton';
 
 const { width } = Dimensions.get('window');
 
 type Meal = {
-  id: string;
-  imageUri: string;
-  timestamp: string;
-  date?: string;
+  _id: string;
+  imageUrl: string;
+  createdAt: string;
+  date: string;
   title: string;
-  mealType?: string;
+  type: string;
   calories?: number;
 };
-
-function getRandomPlaceholder() {
-  const placeholders = [
-    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?q=80&w=2970&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1180&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    'https://images.unsplash.com/photo-1576867757603-05b134ebc379?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    'https://images.unsplash.com/photo-1605926637512-c8b131444a4b?q=80&w=1180&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  ];
-  return placeholders[Math.floor(Math.random() * placeholders.length)];
-}
 
 export default function TimelineScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [meals, setMeals] = useState<Meal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,45 +42,47 @@ export default function TimelineScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadMeals(false);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadMeals();
     }, [])
   );
 
-  const loadMeals = async () => {
+  const loadMeals = async (showLoading: boolean = true) => {
     try {
-      setIsLoading(true);
+      if (showLoading) setIsLoading(true);
 
-      const userEmail = auth.currentUser?.email ?? 'guest@example.com';
-      const firestoreMeals = await fetchMealsFromFirestore(userEmail);
+      const result = await api.getMeals(1, 50);
 
-      const enrichedMeals: Meal[] = await Promise.all(
-        firestoreMeals.map(async (meal) => {
-          let localUri = await AsyncStorage.getItem(`meal_image_${meal.id}`);
-          if (localUri) {
-            try {
-              const fileInfo = await FileSystem.getInfoAsync(localUri);
-              if (!fileInfo.exists) localUri = null;
-            } catch {
-              localUri = null;
-            }
-          }
-          return {
-            ...meal,
-            imageUri: localUri ?? getRandomPlaceholder(),
-          } as Meal;
-        })
-      );
+      if (result.success && result.data) {
+        const mealsData: Meal[] = result.data.meals.map((meal: any) => ({
+          _id: meal._id || meal.id,
+          title: meal.title,
+          type: meal.type,
+          date: meal.date,
+          calories: meal.calories,
+          imageUrl: meal.imageUrl,
+          createdAt: meal.createdAt,
+        }));
 
-      enrichedMeals.sort((a, b) => {
-        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-      });
+        mealsData.sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return dateB - dateA;
+        });
 
-      setMeals(enrichedMeals);
+        setMeals(mealsData);
+      }
     } catch (error) {
       console.error('Error loading meals:', error);
-      Alert.alert('Error', 'Failed to load meals');
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -103,210 +94,219 @@ export default function TimelineScreen() {
     await loadMeals();
   };
 
-  const formatDate = (dateString: string | number | Date) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const getMealEmoji = (mealType: any) => {
-    switch (mealType) {
-      case 'breakfast':
-        return '🍳';
-      case 'lunch':
-        return '🥗';
-      case 'dinner':
-        return '🍽️';
-      case 'snack':
-        return '🍎';
-      default:
-        return '🍽️';
-    }
-  };
-
   const deleteMeal = async (mealId: string) => {
     try {
-      // Delete from Firestore
-      await deleteDoc(doc(db, 'meals', mealId));
-
-      // Delete image uri from AsyncStorage if exists
-      await AsyncStorage.removeItem(`meal_image_${mealId}`);
-
-      // Remove from local state
-      const updatedMeals = meals.filter((meal) => meal.id !== mealId);
+      const updatedMeals = meals.filter((meal) => meal._id !== mealId);
       setMeals(updatedMeals);
 
+      await api.deleteMeal(mealId);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      Alert.alert('Success', 'Meal deleted successfully');
-    } catch (error) {
+      await loadMeals(false);
+    } catch (error: any) {
       console.error('Error deleting meal:', error);
-      Alert.alert('Error', 'Failed to delete meal');
+      loadMeals();
     }
   };
 
-  const handleDeleteMeal = (meal: { title: any; id: string }) => {
-    Alert.alert(
-      'Delete Meal',
-      `Are you sure you want to delete "${meal.title}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deleteMeal(meal.id),
-        },
-      ]
-    );
+  const handleDeleteMeal = (meal: Meal) => {
+    const isWeb = typeof window !== 'undefined';
+
+    if (isWeb) {
+      const confirmed = window.confirm(`Are you sure you want to delete "${meal.title}"?`);
+      if (confirmed) {
+        deleteMeal(meal._id);
+      }
+    } else {
+      const { Alert } = require('react-native');
+      Alert.alert(
+        'Delete Meal',
+        `Are you sure you want to delete "${meal.title}"?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => deleteMeal(meal._id),
+          },
+        ]
+      );
+    }
   };
 
-  const openImageModal = (imageUri: string | null) => {
-    setSelectedImage(imageUri);
+  const openImageModal = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
     setShowImageModal(true);
   };
 
   const renderMealItem = ({ item }: { item: Meal }) => (
-    <View className="rounded-xl p-4 mb-4 shadow-sm" style={{ backgroundColor: colors.cardBackground }}>
-      <View className="flex-row justify-between items-start mb-3">
-        <View className="flex-1">
-          <View className="flex-row items-center mb-1">
-            <Text className="text-lg mr-2" style={{ color: colors.accent }}>
-              {getMealEmoji(item.mealType)}
-            </Text>
-            <Text className="text-lg font-bold flex-1" style={{ color: colors.textPrimary }}>
-              {item.title}
-            </Text>
-          </View>
-          <Text className="text-sm capitalize" style={{ color: colors.textMuted }}>
-            {item.mealType}
-          </Text>
-          <Text className="text-sm" style={{ color: colors.textMuted }}>
-            {formatDate(item.date || '')}
-          </Text>
-        </View>
-        <TouchableOpacity onPress={() => openImageModal(item.imageUri)} className="ml-3">
-          <Image
-            source={{ uri: item.imageUri }}
-            className="w-16 h-16 rounded-lg"
-            resizeMode="cover"
-          />
-        </TouchableOpacity>
-      </View>
-
-      {item.calories !== undefined && (
-        <View className="rounded-lg p-2 mb-3" style={{ backgroundColor: colors.accent + '20' }}>
-          <Text className="font-medium text-center" style={{ color: colors.accent }}>
-            {item.calories} calories
-          </Text>
-        </View>
-      )}
-
-      <View className="flex-row justify-end space-x-2">
-        <TouchableOpacity
-          onPress={() => handleDeleteMeal(item)}
-          className="px-3 py-1 rounded-lg"
-          style={{ backgroundColor: colors.switchTrackFalse }}
-        >
-          <Text className="font-medium" style={{ color: colors.accent }}>
-            Delete
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <MealCard
+      title={item.title}
+      type={item.type}
+      date={item.date}
+      calories={item.calories}
+      imageUrl={item.imageUrl}
+      onPress={() => openImageModal(item.imageUrl)}
+      onDelete={() => handleDeleteMeal(item)}
+    />
   );
 
   const renderEmptyState = () => (
     <View className="flex-1 justify-center items-center p-8">
-      <Text className="text-6xl mb-4" style={{ color: colors.accent }}>
-        🍽️
-      </Text>
-      <Text className="text-xl font-semibold mb-2" style={{ color: colors.textPrimary }}>
+      <Ionicons name="restaurant-outline" size={64} color={colors.primary} style={{ marginBottom: 16 }} />
+      <Text
+        className="text-xl font-semibold mb-2"
+        style={{ color: colors.textPrimary }}
+      >
         No meals logged yet
       </Text>
-      <Text className="text-center mb-6" style={{ color: colors.textMuted }}>
+      <Text
+        className="text-center mb-6 text-sm"
+        style={{ color: colors.textSecondary }}
+      >
         Start tracking your meals by capturing photos and adding details
       </Text>
-      <TouchableOpacity
+      <PrimaryButton
+        title="Log Your First Meal"
         onPress={() => router.push('./meal-logging')}
-        className="px-6 py-3 rounded-lg"
-        style={{ backgroundColor: colors.accent }}
-      >
-        <Text className="font-semibold text-white">Log Your First Meal</Text>
-      </TouchableOpacity>
+      />
     </View>
   );
 
   if (isLoading) {
     return (
-      <View className="flex-1 justify-center items-center" style={{ backgroundColor: colors.primaryBackground }}>
-        <ActivityIndicator size="large" color={colors.accent} />
-        <Text className="mt-4" style={{ color: colors.textMuted }}>
-          Loading your meals...
-        </Text>
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.primaryBackground }}>
-      <View className="pt-12 pb-4 px-4 shadow-sm" style={{ backgroundColor: colors.cardBackground }}>
-        <View className="flex-row justify-between items-center">
-          <Text className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+    <View
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
+    >
+      {/* Header */}
+      <View
+        className="pb-6 px-6"
+        style={{ 
+          backgroundColor: colors.surface,
+          paddingTop: insets.top + 20,
+        }}
+      >
+        <View className="mb-4 flex-row items-center">
+          <Image
+            source={require('../../assets/logo.png')}
+            style={{ width: 32, height: 32, marginRight: 12 }}
+            resizeMode="contain"
+          />
+          <Text
+            className="text-2xl font-bold"
+            style={{ color: colors.textPrimary }}
+          >
             My Meals
           </Text>
-          <View className="flex flex-row justify-center items-center gap-4">
-            <TouchableOpacity
-              onPress={() => router.push('./meal-logging')}
-              className="px-4 py-2 rounded-lg"
-              style={{ backgroundColor: colors.accent }}
-            >
-              <Text className="font-semibold text-white">+ Add Meal</Text>
-            </TouchableOpacity>
-            <SettingsButton />
-          </View>
         </View>
-        <View className="flex-row justify-between mt-4">
-          <View className="rounded-lg p-3 flex-1 mr-2" style={{ backgroundColor: colors.surface }}>
-            <Text className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+
+        {/* Stats Row */}
+        <View className="flex-row -mx-2">
+          <View
+            className="flex-1 mx-2 rounded-xl p-4"
+            style={{ backgroundColor: colors.surface }}
+          >
+            <Text
+              className="text-2xl font-bold mb-1"
+              style={{ color: colors.textPrimary }}
+            >
               {meals.length}
             </Text>
-            <Text style={{ color: colors.textMuted }}>Total Meals</Text>
-          </View>
-          <View className="rounded-lg p-3 flex-1 ml-2" style={{ backgroundColor: colors.surface }}>
-            <Text className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-              {meals.filter((meal) => meal.date === new Date().toISOString().split('T')[0]).length}
+            <Text
+              className="text-sm font-medium"
+              style={{ color: colors.textSecondary }}
+            >
+              Total Meals
             </Text>
-            <Text style={{ color: colors.textMuted }}>Today</Text>
+          </View>
+          <View
+            className="flex-1 mx-2 rounded-xl p-4"
+            style={{ backgroundColor: colors.surface }}
+          >
+            <Text
+              className="text-2xl font-bold mb-1"
+              style={{ color: colors.textPrimary }}
+            >
+              {meals.filter(
+                (meal) =>
+                  new Date(meal.date).toISOString().split('T')[0] ===
+                  new Date().toISOString().split('T')[0]
+              ).length}
+            </Text>
+            <Text
+              className="text-sm font-medium"
+              style={{ color: colors.textSecondary }}
+            >
+              Today
+            </Text>
           </View>
         </View>
       </View>
 
+      {/* Meals List */}
       <FlatList
         data={meals}
         renderItem={renderMealItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 16 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
+        keyExtractor={(item) => item._id}
+        contentContainerStyle={{ padding: 20 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+          />
+        }
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
       />
 
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        onPress={() => router.push('./meal-logging')}
+        className="absolute bottom-6 right-6 w-14 h-14 rounded-full items-center justify-center"
+        style={{
+          backgroundColor: colors.primary,
+          shadowColor: colors.shadow,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+          elevation: 6,
+        }}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={28} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      {/* Image Modal */}
       <Modal
         visible={showImageModal}
         transparent={true}
         animationType="fade"
         onRequestClose={() => setShowImageModal(false)}
       >
-        <View className="flex-1 justify-center items-center" style={{ backgroundColor: colors.primaryBackground + 'ee' }}>
+        <View
+          className="flex-1 justify-center items-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)' }}
+        >
           <TouchableOpacity
             onPress={() => setShowImageModal(false)}
             className="absolute top-12 right-4 z-10"
           >
-            <View className="rounded-full w-10 h-10 items-center justify-center" style={{ backgroundColor: colors.cardBackground + 'cc' }}>
-              <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: 'bold' }}>×</Text>
+            <View
+              className="rounded-full w-10 h-10 items-center justify-center"
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+            >
+              <Ionicons name="close" size={24} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
           {selectedImage && (

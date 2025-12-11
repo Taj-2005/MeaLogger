@@ -3,6 +3,13 @@ const { body, validationResult } = require('express-validator');
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    const logger = require('../utils/logger');
+    logger.warn('Validation failed', {
+      errors: errors.array(),
+      body: req.body,
+      hasFile: !!req.file,
+      fileField: req.file?.fieldname,
+    });
     return res.status(400).json({
       success: false,
       message: 'Validation failed',
@@ -12,7 +19,6 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// Auth validation
 const validateRegister = [
   body('name')
     .trim()
@@ -52,7 +58,6 @@ const validateRefreshToken = [
   handleValidationErrors,
 ];
 
-// Meal validation
 const validateMeal = [
   body('title')
     .trim()
@@ -66,13 +71,50 @@ const validateMeal = [
   body('date')
     .notEmpty()
     .withMessage('Date is required')
-    .isISO8601()
-    .withMessage('Date must be a valid ISO 8601 date'),
-  body('calories').optional().isInt({ min: 0 }).withMessage('Calories must be a positive integer'),
+    .custom((value) => {
+      const iso8601Regex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?)?$/;
+      const dateOnlyRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (iso8601Regex.test(value) || dateOnlyRegex.test(value)) {
+        return true;
+      }
+      throw new Error('Date must be a valid ISO 8601 date or YYYY-MM-DD format');
+    }),
+  body('calories')
+    .optional()
+    .custom((value) => {
+      if (value === '' || value === null || value === undefined) {
+        return true;
+      }
+      const num = parseInt(value, 10);
+      if (isNaN(num) || num < 0) {
+        throw new Error('Calories must be a positive integer');
+      }
+      return true;
+    }),
+  body('imageUrl')
+    .optional()
+    .custom((value) => {
+      if (!value) return true;
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        throw new Error('ImageUrl must be a valid URL');
+      }
+    }),
+  (req, res, next) => {
+    if (!req.file && !req.body.imageUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Image is required. Please provide imageUrl or upload an image file.',
+        errors: [{ msg: 'Image is required' }],
+      });
+    }
+    next();
+  },
   handleValidationErrors,
 ];
 
-// Profile validation
 const validateProfileUpdate = [
   body('name')
     .optional()
@@ -82,7 +124,6 @@ const validateProfileUpdate = [
   handleValidationErrors,
 ];
 
-// Settings validation
 const validateSettingsUpdate = [
   body('darkMode').optional().isBoolean().withMessage('darkMode must be a boolean'),
   body('reminders').optional().isArray().withMessage('reminders must be an array'),
@@ -94,7 +135,6 @@ const validateSettingsUpdate = [
   handleValidationErrors,
 ];
 
-// Reminder validation
 const validateReminder = [
   body('title')
     .trim()

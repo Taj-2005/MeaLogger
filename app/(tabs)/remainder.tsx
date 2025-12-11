@@ -1,43 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
-  Alert,
-  ActivityIndicator,
-  Platform,
+  View
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { auth, db } from '../../firebaseConfig';
-import {
-  collection,
-  addDoc,
-  query,
-  where,
-  onSnapshot,
-  deleteDoc,
-  doc,
-} from 'firebase/firestore';
-import * as Notifications from 'expo-notifications';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
-import SettingsButton from '../components/SettingsBtn';
+import { api } from '../../services/api';
+import {
+  cancelReminderNotification,
+  checkNotificationPermissions,
+  requestNotificationPermissions,
+  rescheduleAllReminders,
+  scheduleReminderNotification,
+} from '../../utils/notifications';
+import PrimaryButton from '../components/PrimaryButton';
 
 type Reminder = {
-  id: string;
+  _id: string;
   title: string;
-  mealType: string;
+  mealType?: string;
   hour: number;
   minute: number;
-  userEmail: string;
+  enabled: boolean;
 };
 
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 export default function RemindersScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [title, setTitle] = useState('');
   const [mealType, setMealType] = useState(MEAL_TYPES[0]);
@@ -45,37 +47,36 @@ export default function RemindersScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
-  const userEmail = auth.currentUser?.email ?? 'guest@example.com';
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
-    const remindersRef = collection(db, 'reminders');
-    const q = query(remindersRef, where('userEmail', '==', userEmail));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const rems: Reminder[] = [];
-      querySnapshot.forEach((doc) => {
-        rems.push({ ...(doc.data() as Reminder), id: doc.id });
-      });
-      setReminders(rems);
+    const interval = setInterval(() => {
+      loadReminders(false);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadReminders();
+    }, [])
+  );
+
+  const loadReminders = async (showLoading: boolean = true) => {
+    try {
+      if (showLoading) setLoading(true);
+      const result = await api.getReminders();
+      if (result.success && result.data) {
+        const remindersData = result.data.reminders;
+        setReminders(remindersData);
+        await rescheduleAllReminders(remindersData);
+      }
+    } catch (error) {
+      console.error('Error loading reminders:', error);
+    } finally {
       setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [userEmail]);
-
-  const scheduleNotification = async (hour: number, minute: number, title: string) => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Meal Reminder',
-        body: `Time for your ${title}`,
-        sound: true,
-      },
-      trigger: {
-        type: 'calendar',
-        hour,
-        minute,
-        repeats: true,
-      } as any,
-    });
+    }
   };
 
   const handleAddReminder = async () => {
@@ -84,51 +85,127 @@ export default function RemindersScreen() {
       return;
     }
 
+    const hasPermission = await checkNotificationPermissions();
+    if (!hasPermission) {
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        Alert.alert(
+          'Permission Required',
+          'Please enable notifications in your device settings to receive meal reminders.'
+        );
+        return;
+      }
+    }
+
+    setIsAdding(true);
     try {
-      await addDoc(collection(db, 'reminders'), {
+      const result = await api.createReminder({
         title,
-        mealType,
+        mealType: mealType.toLowerCase(),
         hour: time.getHours(),
         minute: time.getMinutes(),
-        userEmail,
+        enabled: true,
       });
 
-      await scheduleNotification(time.getHours(), time.getMinutes(), title);
-
-      setTitle('');
-      setMealType(MEAL_TYPES[0]);
-      setTime(new Date());
-
-      Alert.alert('Success', 'Reminder added and notification scheduled.');
-    } catch (error) {
+      if (result.success && result.data) {
+        const reminder = (result.data as any).reminder;
+        if (reminder && reminder.id) {
+          await scheduleReminderNotification(
+            reminder.id,
+            time.getHours(),
+            time.getMinutes(),
+            title
+          );
+        }
+        setTitle('');
+        setMealType(MEAL_TYPES[0]);
+        setTime(new Date());
+        await loadReminders(false);
+      }
+    } catch (error: any) {
       console.error('Error adding reminder:', error);
-      Alert.alert('Error', 'Failed to add reminder.');
+      Alert.alert('Error', error.message || 'Failed to add reminder.');
+    } finally {
+      setIsAdding(false);
     }
   };
 
-  const handleDeleteReminder = (id: string) => {
-    Alert.alert('Delete Reminder', 'Are you sure you want to delete this reminder?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteDoc(doc(db, 'reminders', id));
-            Alert.alert('Deleted', 'Reminder deleted successfully.');
-          } catch (error) {
-            console.error('Error deleting reminder:', error);
-            Alert.alert('Error', 'Failed to delete reminder.');
-          }
-        },
-      },
-    ]);
+  const handleDeleteReminder = async (id: string) => {
+    const isWeb = typeof window !== 'undefined';
+    const confirmed = isWeb
+      ? window.confirm('Are you sure you want to delete this reminder?')
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert('Delete Reminder', 'Are you sure?', [
+            { text: 'Cancel', onPress: () => resolve(false), style: 'cancel' },
+            {
+              text: 'Delete',
+              onPress: () => resolve(true),
+              style: 'destructive',
+            },
+          ]);
+        });
+
+    if (confirmed) {
+      try {
+        await cancelReminderNotification(id);
+        await api.deleteReminder(id);
+        await loadReminders(false);
+      } catch (error: any) {
+        Alert.alert('Error', error.message || 'Failed to delete reminder.');
+      }
+    }
+  };
+
+  const handleToggleReminder = async (reminder: Reminder) => {
+    try {
+      const newEnabledState = !reminder.enabled;
+      await api.updateReminder(reminder._id, {
+        enabled: newEnabledState,
+      });
+
+      if (newEnabledState) {
+        await cancelReminderNotification(reminder._id);
+        await scheduleReminderNotification(
+          reminder._id,
+          reminder.hour,
+          reminder.minute,
+          reminder.title
+        );
+      } else {
+        await cancelReminderNotification(reminder._id);
+      }
+
+      await loadReminders(false);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to update reminder.');
+    }
   };
 
   const onChangeTime = (event: any, selectedDate?: Date) => {
-    setShowTimePicker(Platform.OS === 'ios'); // keep open on iOS
+    setShowTimePicker(Platform.OS === 'ios');
     if (selectedDate) {
       setTime(selectedDate);
+    }
+  };
+
+  const formatTime = (hour: number, minute: number) => {
+    const h = hour.toString().padStart(2, '0');
+    const m = minute.toString().padStart(2, '0');
+    return `${h}:${m}`;
+  };
+
+  const getMealTypeIcon = (type?: string): keyof typeof Ionicons.glyphMap => {
+    switch (type?.toLowerCase()) {
+      case 'breakfast':
+        return 'sunny-outline';
+      case 'lunch':
+        return 'restaurant-outline';
+      case 'dinner':
+        return 'moon-outline';
+      case 'snack':
+        return 'cafe-outline';
+      default:
+        return 'time-outline';
     }
   };
 
@@ -136,128 +213,314 @@ export default function RemindersScreen() {
     return (
       <View
         className="flex-1 justify-center items-center"
-        style={{ backgroundColor: colors.primaryBackground }}
+        style={{ backgroundColor: colors.background }}
       >
-        <ActivityIndicator size="large" color={colors.accent} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 p-4" style={{ backgroundColor: colors.primaryBackground }}>
-      <View className="flex-row justify-between items-center mb-4 mt-10">
-        <Text className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-          Manage Meal Reminders
-        </Text>
-        <SettingsButton />
-      </View>
-
-      {/* Title input */}
-      <TextInput
-        placeholder="Reminder Title"
-        placeholderTextColor={colors.textMuted}
-        value={title}
-        onChangeText={setTitle}
-        className="border rounded p-2 mb-4"
-        style={{
-          borderColor: colors.border,
-          color: colors.textPrimary,
-          backgroundColor: colors.surface,
-        }}
-      />
-
-      {/* Meal type picker */}
+    <View
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
+    >
+      {/* Header */}
       <View
-        className="border rounded mb-4"
-        style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+        className="pb-6 px-6"
+        style={{ 
+          backgroundColor: colors.surface,
+          paddingTop: insets.top + 20,
+        }}
       >
-        <Picker
-          selectedValue={mealType}
-          onValueChange={(value) => setMealType(value)}
-          style={{ color: colors.textPrimary }}
-          dropdownIconColor={colors.textPrimary}
-        >
-          {MEAL_TYPES.map((type) => (
-            <Picker.Item label={type} value={type} key={type} color={colors.textPrimary} />
-          ))}
-        </Picker>
+        <View className="mb-4 flex-row items-center">
+          <Image
+            source={require('../../assets/logo.png')}
+            style={{ width: 32, height: 32, marginRight: 12 }}
+            resizeMode="contain"
+          />
+          <Text
+            className="text-2xl font-bold"
+            style={{ color: colors.textPrimary }}
+          >
+            Reminders
+          </Text>
+        </View>
       </View>
 
-      {/* Time picker */}
-      <TouchableOpacity
-        onPress={() => setShowTimePicker(true)}
-        className="border rounded p-3 mb-4"
-        style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ padding: 20 }}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={{ color: colors.textPrimary }}>
-          Set Time: {time.getHours().toString().padStart(2, '0')}:
-          {time.getMinutes().toString().padStart(2, '0')}
-        </Text>
-      </TouchableOpacity>
+        {/* Add Reminder Form */}
+        <View
+          className="rounded-2xl p-6 mb-6"
+          style={{
+            backgroundColor: colors.surface,
+            shadowColor: colors.shadow,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 3,
+          }}
+        >
+          <Text
+            className="text-lg font-bold mb-4"
+            style={{ color: colors.textPrimary }}
+          >
+            Add New Reminder
+          </Text>
 
-      {showTimePicker && (
-        <DateTimePicker
-          value={time}
-          mode="time"
-          is24Hour={true}
-          display="default"
-          onChange={onChangeTime}
-          textColor={colors.textPrimary} // For iOS picker text color
-          style={{ backgroundColor: colors.primaryBackground }}
-        />
-      )}
-
-      {/* Add reminder button */}
-      <TouchableOpacity
-        onPress={handleAddReminder}
-        className="rounded p-3 mb-6"
-        style={{ backgroundColor: colors.accent }}
-      >
-        <Text className="text-center font-semibold" style={{ color: colors.switchThumb }}>
-          Add Reminder
-        </Text>
-      </TouchableOpacity>
-
-      {/* List reminders */}
-      {reminders.length === 0 ? (
-        <Text className="text-center" style={{ color: colors.textMuted }}>
-          No reminders set yet.
-        </Text>
-      ) : (
-        <FlatList
-          data={reminders}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View
-              className="flex-row justify-between items-center border-b py-3"
-              style={{ borderColor: colors.border }}
+          {/* Title Input */}
+          <View className="mb-4">
+            <Text
+              className="text-sm font-semibold mb-2"
+              style={{ color: colors.textPrimary }}
             >
-              <View>
-                <Text className="font-semibold text-lg" style={{ color: colors.textPrimary }}>
-                  {item.title}
-                </Text>
-                <Text style={{ color: colors.textMuted }}>
-                  {item.mealType} at {item.hour.toString().padStart(2, '0')}:
-                  {item.minute.toString().padStart(2, '0')}
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => handleDeleteReminder(item.id)}
-                className="px-3 py-1 rounded"
-                style={{ backgroundColor: isDark ? '#7f1d1d' : '#fee2e2' }} // red-900 / red-100
-              >
-                <Text
-                  className="font-semibold"
-                  style={{ color: isDark ? '#fecaca' : '#b91c1c' }} // red-300 / red-700
-                >
-                  Delete
-                </Text>
-              </TouchableOpacity>
+              Reminder Title *
+            </Text>
+            <View
+              className="rounded-xl px-4 py-3.5 flex-row items-center"
+              style={{
+                backgroundColor: colors.background,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <TextInput
+                placeholder="e.g., Breakfast Time"
+                placeholderTextColor={colors.textSecondary}
+                value={title}
+                onChangeText={setTitle}
+                className="flex-1 text-base"
+                style={{ color: colors.textPrimary }}
+              />
             </View>
+          </View>
+
+          {/* Meal Type Picker */}
+          <View className="mb-4">
+            <Text
+              className="text-sm font-semibold mb-2"
+              style={{ color: colors.textPrimary }}
+            >
+              Meal Type
+            </Text>
+            <View
+              className="rounded-xl overflow-hidden py-4 px-2"
+              style={{
+                backgroundColor: colors.background,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Picker
+                selectedValue={mealType}
+                onValueChange={setMealType}
+                style={{
+                  color: colors.textPrimary,
+                  backgroundColor: 'transparent',
+                }}
+              >
+                {MEAL_TYPES.map((type) => (
+                  <Picker.Item
+                    key={type}
+                    label={type}
+                    value={type}
+                    color={colors.textPrimary}
+                  />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
+          {/* Time Picker */}
+          <View className="mb-6">
+            <Text
+              className="text-sm font-semibold mb-2"
+              style={{ color: colors.textPrimary }}
+            >
+              Time
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowTimePicker(true)}
+              activeOpacity={0.7}
+              className="rounded-xl px-4 py-3.5 flex-row items-center"
+              style={{
+                backgroundColor: colors.background,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Ionicons
+                name="time-outline"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text
+                className="text-base flex-1"
+                style={{ color: colors.textPrimary }}
+              >
+                {formatTime(time.getHours(), time.getMinutes())}
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+
+            {showTimePicker && (
+              <DateTimePicker
+                value={time}
+                mode="time"
+                is24Hour={false}
+                display="default"
+                onChange={onChangeTime}
+              />
+            )}
+          </View>
+
+          {/* Add Button */}
+          <PrimaryButton
+            title="Add Reminder"
+            onPress={handleAddReminder}
+            loading={isAdding}
+            disabled={isAdding || !title.trim()}
+            variant="primary"
+          />
+        </View>
+
+        {/* Reminders List */}
+        <View className="mb-6">
+          <Text
+            className="text-lg font-bold mb-4"
+            style={{ color: colors.textPrimary }}
+          >
+            Your Reminders ({reminders.length})
+          </Text>
+
+          {reminders.length === 0 ? (
+            <View
+              className="rounded-2xl p-8 items-center"
+              style={{ backgroundColor: colors.surface }}
+            >
+              <Ionicons name="notifications-outline" size={64} color={colors.primary} style={{ marginBottom: 16 }} />
+              <Text
+                className="text-base font-semibold mb-2 text-center"
+                style={{ color: colors.textPrimary }}
+              >
+                No reminders yet
+              </Text>
+              <Text
+                className="text-sm text-center"
+                style={{ color: colors.textSecondary }}
+              >
+                Add a reminder above to get notified about your meals
+              </Text>
+            </View>
+          ) : (
+            reminders.map((reminder) => (
+              <View
+                key={reminder._id}
+                className="rounded-2xl p-4 mb-3 flex-row items-center justify-between"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <View className="flex-1 flex-row items-center">
+                  <View
+                    className="w-12 h-12 rounded-xl items-center justify-center mr-4"
+                    style={{ backgroundColor: `${colors.primary}15` }}
+                  >
+                    <Ionicons 
+                      name={getMealTypeIcon(reminder.mealType)} 
+                      size={24} 
+                      color={colors.primary} 
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className="text-base font-semibold mb-1"
+                      style={{ color: colors.textPrimary }}
+                    >
+                      {reminder.title}
+                    </Text>
+                    <View className="flex-row items-center">
+                      <Text
+                        className="text-sm mr-2"
+                        style={{ color: colors.textSecondary }}
+                      >
+                        {reminder.mealType
+                          ? `${reminder.mealType} • `
+                          : ''}
+                        {formatTime(reminder.hour, reminder.minute)}
+                      </Text>
+                      <View
+                        className="px-2 py-0.5 rounded"
+                        style={{
+                          backgroundColor: reminder.enabled
+                            ? `${colors.success}15`
+                            : `${colors.textSecondary}15`,
+                        }}
+                      >
+                        <Text
+                          className="text-xs font-semibold"
+                          style={{
+                            color: reminder.enabled
+                              ? colors.success
+                              : colors.textSecondary,
+                          }}
+                        >
+                          {reminder.enabled ? 'Active' : 'Disabled'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+                <View className="flex-row items-center">
+                  <TouchableOpacity
+                    onPress={() => handleToggleReminder(reminder)}
+                    className="p-2 mr-2"
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={
+                        reminder.enabled
+                          ? 'toggle'
+                          : 'toggle-outline'
+                      }
+                      size={24}
+                      color={reminder.enabled ? colors.success : colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteReminder(reminder._id)}
+                    className="p-2"
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={22}
+                      color={colors.error}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
           )}
-          contentContainerStyle={{ paddingBottom: 40 }}
-        />
-      )}
+        </View>
+      </ScrollView>
     </View>
   );
 }

@@ -2,12 +2,10 @@ const Settings = require('../models/settings.model');
 const User = require('../models/user.model');
 const logger = require('../utils/logger');
 
-// Get user settings
 const getSettings = async (req, res) => {
   try {
     let settings = await Settings.findOne({ user: req.userId });
 
-    // Create default settings if not exists
     if (!settings) {
       settings = new Settings({
         user: req.userId,
@@ -17,7 +15,6 @@ const getSettings = async (req, res) => {
       });
       await settings.save();
 
-      // Update user reference
       const user = await User.findById(req.userId);
       if (user) {
         user.settings = settings._id;
@@ -44,14 +41,12 @@ const getSettings = async (req, res) => {
   }
 };
 
-// Update user settings
 const updateSettings = async (req, res) => {
   try {
     const { darkMode, reminders, notificationPermission } = req.body;
 
     let settings = await Settings.findOne({ user: req.userId });
 
-    // Create settings if not exists
     if (!settings) {
       settings = new Settings({
         user: req.userId,
@@ -60,7 +55,6 @@ const updateSettings = async (req, res) => {
         notificationPermission: false,
       });
 
-      // Update user reference
       const user = await User.findById(req.userId);
       if (user) {
         user.settings = settings._id;
@@ -68,7 +62,6 @@ const updateSettings = async (req, res) => {
       }
     }
 
-    // Update settings fields
     if (typeof darkMode === 'boolean') {
       settings.darkMode = darkMode;
     }

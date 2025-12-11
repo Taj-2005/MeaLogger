@@ -8,12 +8,10 @@ const {
   validateRefreshToken,
 } = require('../middlewares/validate.middleware');
 
-// Public routes
 router.post('/register', validateRegister, authController.register);
 router.post('/login', validateLogin, authController.login);
 router.post('/refresh', validateRefreshToken, authController.refreshToken);
 
-// Protected route
 router.post('/logout', authenticate, authController.logout);
 
 module.exports = router;

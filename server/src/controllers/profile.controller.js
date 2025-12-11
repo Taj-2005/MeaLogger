@@ -2,7 +2,6 @@ const User = require('../models/user.model');
 const { uploadImage } = require('../services/storage.service');
 const logger = require('../utils/logger');
 
-// Get user profile
 const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-passwordHash -refreshTokens');
@@ -36,7 +35,6 @@ const getProfile = async (req, res) => {
   }
 };
 
-// Update user profile
 const updateProfile = async (req, res) => {
   try {
     const { name } = req.body;
@@ -50,14 +48,10 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    // Handle avatar upload
     let avatarUrl = user.avatarUrl;
 
     if (req.file) {
-      // Delete old avatar if exists
       if (user.avatarUrl && user.avatarUrl.includes('cloudinary')) {
-        // Extract public ID from URL or store it separately
-        // For simplicity, we'll upload new one
       }
 
       const uploadResult = await uploadImage(req.file.buffer, 'meal-logger/avatars', {
@@ -65,10 +59,8 @@ const updateProfile = async (req, res) => {
         transformation: [{ width: 400, height: 400, crop: 'fill' }],
       });
       avatarUrl = uploadResult.url;
-      cloudinaryPublicId = uploadResult.publicId;
     }
 
-    // Update user fields
     if (name) user.name = name;
     if (avatarUrl) user.avatarUrl = avatarUrl;
 

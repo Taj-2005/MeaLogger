@@ -1,146 +1,163 @@
-import { Text, View, ScrollView, Switch } from "react-native";
-import { Link } from "expo-router";
-import { useTheme } from "../../contexts/ThemeContext";
-import SettingsButton from "../components/SettingsBtn";
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  View,
+} from 'react-native';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { api } from '../../services/api';
+import GreetingHeader from '../components/GreetingHeader';
+import MotivationBanner from '../components/MotivationBanner';
+import QuickActions from '../components/QuickActions';
+import StreakTracker from '../components/StreakTracker';
+import TodaySummary from '../components/TodaySummary';
 
-export default function Index() {
-  const { colors, toggleTheme, isDark } = useTheme();
+export default function Dashboard() {
+  const router = useRouter();
+  const { colors } = useTheme();
+  const { user } = useAuth();
+  const [meals, setMeals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState({
+    todayMeals: 0,
+    todayCalories: 0,
+    totalMeals: 0,
+    streak: 0,
+    remindersActive: true,
+  });
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async (showLoading = true) => {
+    try {
+      if (showLoading) setLoading(true);
+
+      const result = await api.getMeals(1, 50);
+      if (result.success && result.data) {
+        const mealsData = result.data.meals || [];
+        setMeals(mealsData);
+
+        const today = new Date().toISOString().split('T')[0];
+        const todayMeals = mealsData.filter(
+          (meal: any) => new Date(meal.date).toISOString().split('T')[0] === today
+        );
+        const todayCalories = todayMeals.reduce(
+          (sum: number, meal: any) => sum + (meal.calories || 0),
+          0
+        );
+
+        const streak = calculateStreak(mealsData);
+
+        const remindersResult = await api.getReminders().catch(() => null);
+        const remindersActive = remindersResult?.success && 
+          remindersResult?.data?.reminders && 
+          remindersResult.data.reminders.length > 0;
+
+        setStats({
+          todayMeals: todayMeals.length,
+          todayCalories,
+          totalMeals: mealsData.length,
+          streak,
+          remindersActive: remindersActive || false,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading dashboard:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const calculateStreak = (meals: any[]): number => {
+    if (meals.length === 0) return 0;
+
+    const mealDates = new Set(
+      meals.map((meal) => new Date(meal.date).toISOString().split('T')[0])
+    );
+    const sortedDates = Array.from(mealDates).sort().reverse();
+
+    let streak = 0;
+    const today = new Date().toISOString().split('T')[0];
+    let currentDate = new Date(today);
+
+    for (const dateStr of sortedDates) {
+      const date = new Date(dateStr);
+      const daysDiff = Math.floor(
+        (currentDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      if (daysDiff === streak) {
+        streak++;
+        currentDate = new Date(date);
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadDashboardData(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
-    <ScrollView
-      contentContainerStyle={{
-        paddingVertical: 60,
-        paddingHorizontal: 24,
-        alignItems: "center",
-        minHeight: "100%",
-        backgroundColor: colors.primaryBackground, // dynamic background
-      }}
+    <View
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
     >
-      <View className="flex sticky flex-col justify-end items-end w-full">
-        <SettingsButton />
-      </View>
-      <View className="w-full max-w-[600px] mb-12 items-center">
-        <Text
-          className="text-4xl font-bold mb-3"
-          style={{ color: colors.accent }} // dynamic text color
-        >
-          MealLogger
-        </Text>
-        <Text
-          className="text-lg font-semibold mb-6 text-center"
-          style={{ color: colors.icon }}
-        >
-          Track Your Meals. Master Your Health.
-        </Text>
-        <Text
-          className="text-base text-center leading-6 mb-8"
-          style={{ color: colors.textMuted }}
-        >
-          MealLogger is a professional-grade app designed to help you log meals, monitor eating
-          patterns, and improve nutrition with ease and precision.
-        </Text>
-        <Link
-          href="/meal-logging"
-          className="py-3.5 rounded-lg w-full"
-          style={{ backgroundColor: colors.accent }}
-        >
-          <Text className="text-white font-bold text-lg text-center">Start Logging Your Meals</Text>
-        </Link>
-      </View>
-
-      {/* Features Section */}
-      <View className="w-full max-w-[600px] mb-12">
-        <Text
-          className="text-2xl font-semibold mb-4"
-          style={{ color: colors.accent }}
-        >
-          Features
-        </Text>
-        <View className="ml-4">
-          {[
-            "Effortless meal logging with accurate timestamps",
-            "Organized meal history sorted by date",
-            "Secure authentication for privacy and data protection",
-            "Insightful visualization of your eating patterns",
-          ].map((feature, i) => (
-            <Text
-              key={i}
-              className="text-base mb-2"
-              style={{ color: colors.textMuted }}
-            >
-              • {feature}
-            </Text>
-          ))}
-        </View>
-      </View>
-
-      {/* Benefits Section */}
-      <View
-        className="w-full max-w-[600px] p-6 rounded-xl shadow mb-12"
-        style={{ backgroundColor: colors.cardBackground }}
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+          />
+        }
       >
-        <Text
-          className="text-2xl font-semibold mb-4"
-          style={{ color: colors.accent }}
-        >
-          Benefits
-        </Text>
-        <View className="ml-4">
-          {[
-            "Gain clear insights into your eating habits",
-            "Support your wellness and nutrition goals",
-            "Track progress over time with confidence",
-            "Make informed, data-driven dietary choices",
-          ].map((benefit, i) => (
-            <Text
-              key={i}
-              className="text-base mb-2"
-              style={{ color: colors.textMuted }}
-            >
-              • {benefit}
-            </Text>
-          ))}
-        </View>
-      </View>
+        <GreetingHeader />
 
-      {/* Why Choose Us Section */}
-      <View className="w-full max-w-[600px] mb-14">
-        <Text
-          className="text-2xl font-semibold mb-4 text-center"
-          style={{ color: colors.accent }}
-        >
-          Why Choose MealLogger?
-        </Text>
-        <View className="ml-4">
-          {[
-            "Intuitive, fast, and reliable experience",
-            "Robust privacy and security measures",
-            "Designed to meet real-world needs",
-            "Constantly improved based on user feedback",
-          ].map((reason, i) => (
-            <Text
-              key={i}
-              className="text-base font-medium mb-2 text-left"
-              style={{ color: colors.textMuted }}
-            >
-              • {reason}
-            </Text>
-          ))}
-        </View>
-      </View>
+        <StreakTracker 
+          streak={stats.streak} 
+          todayMeals={stats.todayMeals}
+        />
 
-      {/* Actions */}
-      <View className="w-full max-w-[400px] space-y-4">
-        <Link
-          href="/meal-logging"
-          className="py-3.5 rounded-lg"
-          style={{ backgroundColor: colors.accent }}
-        >
-          <Text className="text-white font-bold text-base text-center">
-            Log Your First Meal
-          </Text>
-        </Link>
-      </View>
-    </ScrollView>
+        <MotivationBanner 
+          streak={stats.streak}
+          todayMeals={stats.todayMeals}
+        />
+
+        <QuickActions />
+
+        <TodaySummary
+          todayMeals={stats.todayMeals}
+          todayCalories={stats.todayCalories}
+          remindersActive={stats.remindersActive}
+        />
+      </ScrollView>
+    </View>
   );
 }

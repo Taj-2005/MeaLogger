@@ -11,7 +11,6 @@ describe('Meal API', () => {
   let userId;
 
   beforeAll(async () => {
-    // Connect to test database
     const testUri = config.mongoUri.replace('meal-logger', 'meal-logger-test');
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect(testUri);
@@ -22,7 +21,6 @@ describe('Meal API', () => {
   });
 
   afterAll(async () => {
-    // Clean up
     await Settings.deleteMany({});
     await Meal.deleteMany({});
     await User.deleteMany({});
@@ -32,15 +30,13 @@ describe('Meal API', () => {
   });
 
   beforeEach(async () => {
-    // Clear data
     await Settings.deleteMany({});
     await Meal.deleteMany({});
     await User.deleteMany({});
 
-    // Create test user and get token
     const registerResponse = await request(app).post('/api/v1/auth/register').send({
       name: 'Test User',
-      email: `test${Date.now()}@example.com`, // Unique email for each test run
+      email: `test${Date.now()}@example.com`,
       password: 'password123',
     });
 
@@ -116,7 +112,6 @@ describe('Meal API', () => {
 
   describe('GET /api/v1/meals', () => {
     beforeEach(async () => {
-      // Create test meals
       await Meal.create([
         {
           user: userId,
@@ -180,13 +175,11 @@ describe('Meal API', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
 
-      // Verify meal is deleted
       const meal = await Meal.findById(mealId);
       expect(meal).toBeNull();
     });
 
     it('should fail to delete other user meal', async () => {
-      // Create another user
       const otherUserResponse = await request(app).post('/api/v1/auth/register').send({
         name: 'Other User',
         email: 'other@example.com',

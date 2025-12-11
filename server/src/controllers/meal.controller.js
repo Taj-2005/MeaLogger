@@ -2,34 +2,70 @@ const Meal = require('../models/meal.model');
 const { uploadImage, deleteImage } = require('../services/storage.service');
 const logger = require('../utils/logger');
 
-// Create meal
 const createMeal = async (req, res) => {
   try {
     const { title, type, date, calories, imageUrl } = req.body;
 
-    // If image is uploaded via multer, upload to Cloudinary
+    logger.info('Create meal request', {
+      hasFile: !!req.file,
+      title,
+      type,
+      userId: req.userId,
+    });
+
     let finalImageUrl = imageUrl;
     let cloudinaryPublicId = null;
 
     if (req.file) {
-      const uploadResult = await uploadImage(req.file.buffer, 'meal-logger/meals', {
-        public_id: `meal_${req.userId}_${Date.now()}`,
-      });
-      finalImageUrl = uploadResult.url;
-      cloudinaryPublicId = uploadResult.publicId;
+      try {
+        if (!req.file.buffer) {
+          logger.error('File buffer is missing', { file: req.file });
+          return res.status(400).json({
+            success: false,
+            message: 'Image file is invalid. Please try again.',
+          });
+        }
+
+        const uploadResult = await uploadImage(req.file.buffer, 'meal-logger/meals', {
+          public_id: `meal_${req.userId}_${Date.now()}`,
+        });
+        finalImageUrl = uploadResult.url;
+        cloudinaryPublicId = uploadResult.publicId;
+        logger.info('Image uploaded successfully', { url: finalImageUrl });
+      } catch (uploadError) {
+        logger.error('Cloudinary upload error:', uploadError);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to upload image. Please try again.',
+        });
+      }
     } else if (!imageUrl) {
+      logger.warn('No image provided', { body: req.body, hasFile: !!req.file });
       return res.status(400).json({
         success: false,
         message: 'Image is required. Please provide imageUrl or upload an image file.',
       });
     }
 
+    let parsedDate;
+    if (date) {
+      parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid date format',
+        });
+      }
+    } else {
+      parsedDate = new Date();
+    }
+
     const meal = new Meal({
       user: req.userId,
       title,
       type,
-      date: new Date(date),
-      calories: calories ? parseInt(calories) : null,
+      date: parsedDate,
+      calories: calories && calories !== '' ? parseInt(calories, 10) : null,
       imageUrl: finalImageUrl,
       cloudinaryPublicId,
     });
@@ -64,7 +100,6 @@ const createMeal = async (req, res) => {
   }
 };
 
-// Get meals with pagination
 const getMeals = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -100,7 +135,6 @@ const getMeals = async (req, res) => {
   }
 };
 
-// Get single meal
 const getMeal = async (req, res) => {
   try {
     const meal = await Meal.findOne({
@@ -130,7 +164,6 @@ const getMeal = async (req, res) => {
   }
 };
 
-// Update meal
 const updateMeal = async (req, res) => {
   try {
     const { title, type, date, calories, imageUrl } = req.body;
@@ -147,35 +180,27 @@ const updateMeal = async (req, res) => {
       });
     }
 
-    // Handle image update
     let finalImageUrl = meal.imageUrl;
     let cloudinaryPublicId = meal.cloudinaryPublicId;
 
     if (req.file) {
-      // Delete old image if exists
       if (meal.cloudinaryPublicId) {
         await deleteImage(meal.cloudinaryPublicId);
       }
 
-      // Upload new image
       const uploadResult = await uploadImage(req.file.buffer, 'meal-logger/meals', {
         public_id: `meal_${req.userId}_${Date.now()}`,
       });
       finalImageUrl = uploadResult.url;
       cloudinaryPublicId = uploadResult.publicId;
     } else if (imageUrl && imageUrl !== meal.imageUrl) {
-      // If new imageUrl provided, update it
-      // Note: If old image was in Cloudinary, we should delete it
-      // For simplicity, we'll just update the URL
       finalImageUrl = imageUrl;
-      // If old image was in Cloudinary, delete it
       if (meal.cloudinaryPublicId) {
         await deleteImage(meal.cloudinaryPublicId);
         cloudinaryPublicId = null;
       }
     }
 
-    // Update meal fields
     if (title) meal.title = title;
     if (type) meal.type = type;
     if (date) meal.date = new Date(date);
@@ -212,7 +237,6 @@ const updateMeal = async (req, res) => {
   }
 };
 
-// Delete meal
 const deleteMeal = async (req, res) => {
   try {
     const meal = await Meal.findOne({
@@ -227,7 +251,6 @@ const deleteMeal = async (req, res) => {
       });
     }
 
-    // Delete image from Cloudinary if exists
     if (meal.cloudinaryPublicId) {
       await deleteImage(meal.cloudinaryPublicId);
     }
@@ -249,7 +272,6 @@ const deleteMeal = async (req, res) => {
   }
 };
 
-// Bulk create meals (for offline sync)
 const bulkCreateMeals = async (req, res) => {
   try {
     const { meals } = req.body;
@@ -261,7 +283,6 @@ const bulkCreateMeals = async (req, res) => {
       });
     }
 
-    // Validate and prepare meals
     const mealsToCreate = meals.map((meal) => ({
       user: req.userId,
       title: meal.title,
@@ -274,7 +295,6 @@ const bulkCreateMeals = async (req, res) => {
       updatedAt: meal.updatedAt ? new Date(meal.updatedAt) : new Date(),
     }));
 
-    // Insert meals
     const createdMeals = await Meal.insertMany(mealsToCreate, { ordered: false });
 
     logger.info('Bulk meals created', {

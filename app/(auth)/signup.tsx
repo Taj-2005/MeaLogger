@@ -1,18 +1,25 @@
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
   TextInput,
   TouchableOpacity,
-  Text,
-  ActivityIndicator,
-  Alert,
+  View,
 } from 'react-native';
-import { useRouter, Link } from 'expo-router';
-import { useAuth } from '../../contexts/AuthContext';
+import PrimaryButton from '../components/PrimaryButton';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { register, isLoading: authLoading } = useAuth();
+  const { colors } = useTheme();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -20,56 +27,46 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const validateInputs = () => {
+  const handleRegister = async () => {
+    setError('');
+
     if (!name.trim()) {
       setError('Name is required');
-      return false;
+      return;
     }
     if (!email.trim()) {
       setError('Email is required');
-      return false;
+      return;
     }
     if (!validateEmail(email)) {
       setError('Please enter a valid email address');
-      return false;
+      return;
     }
     if (!password.trim()) {
       setError('Password is required');
-      return false;
+      return;
     }
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return false;
+      setError('Password must be at least 6 characters');
+      return;
     }
     if (password !== confirmPassword) {
       setError('Passwords do not match');
-      return false;
+      return;
     }
-    return true;
-  };
-
-  const handleRegister = async () => {
-    setError('');
-    if (!validateInputs()) return;
 
     setIsLoading(true);
     try {
       await register(name, email, password);
-      Alert.alert('Success', 'Account created! Please login.');
-      router.push('./login');
+      router.replace('/(tabs)');
     } catch (error: any) {
-      let errorMessage = 'Registration failed. Please try again.';
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          errorMessage = 'Email already exists';
-          break;
-      }
-      setError(errorMessage);
-      Alert.alert('Error', errorMessage);
+      setError(error.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -77,112 +74,296 @@ export default function RegisterScreen() {
 
   if (authLoading) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-100">
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text className="mt-4 text-gray-600">Loading...</Text>
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View className="flex flex-col justify-center items-center min-h-screen bg-gray-100">
-      <View className="flex flex-col justify-center items-center border-2 border-white gap-2 rounded-xl px-10 py-10 bg-white shadow-lg">
-        <Text className="text-2xl font-bold pb-4 text-gray-800">Sign Up</Text>
-
-        <View className="flex flex-col justify-center items-center gap-3">
-          <View className="border-2 rounded-xl w-72 border-gray-200 px-3">
-            <TextInput
-              placeholder="Name"
-              value={name}
-              onChangeText={(text) => {
-                setName(text);
-                setError('');
-              }}
-              autoCapitalize="words"
-              autoComplete="name"
-              autoCorrect={false}
-              className="p-2"
-            />
-          </View>
-
-          <View className="border-2 rounded-xl w-72 border-gray-200 px-3">
-            <TextInput
-              placeholder="Email"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setError('');
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect={false}
-              className="p-2"
-            />
-          </View>
-
-          <View className="border-2 rounded-xl w-72 border-gray-200 px-3">
-            <TextInput
-              placeholder="Password"
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setError('');
-              }}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="password"
-              autoCorrect={false}
-              className="p-2"
-            />
-          </View>
-
-          <View className="border-2 rounded-xl w-72 border-gray-200 px-3">
-            <TextInput
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChangeText={(text) => {
-                setConfirmPassword(text);
-                setError('');
-              }}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="password"
-              autoCorrect={false}
-              className="p-2"
-            />
-          </View>
-
-          <View className="w-64 mt-2">
-            <TouchableOpacity
-              onPress={handleRegister}
-              disabled={isLoading}
-              className={`rounded-xl py-3 px-6 ${
-                isLoading ? 'bg-gray-400' : 'bg-blue-600'
-              } flex-row justify-center items-center`}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, paddingVertical: 40 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View className="flex-1 justify-center px-6">
+          {/* Header */}
+          <View className="items-center mb-8">
+            <View
+              className="w-20 h-20 rounded-2xl items-center justify-center mb-6 overflow-hidden"
+              style={{ backgroundColor: `${colors.primary}15` }}
             >
-              {isLoading ? (
-                <ActivityIndicator color="white" size="small" />
-              ) : (
-                <Text className="text-white font-semibold text-center">Sign Up</Text>
-              )}
-            </TouchableOpacity>
+              <Image 
+                source={require('../../assets/logo.png')} 
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="contain"
+              />
+            </View>
+            <Text
+              className="text-3xl font-bold mb-2"
+              style={{ color: colors.textPrimary }}
+            >
+              Create Account
+            </Text>
+            <Text
+              className="text-base text-center"
+              style={{ color: colors.textSecondary }}
+            >
+              Start your meal tracking journey today
+            </Text>
+          </View>
+
+          {/* Form */}
+          <View className="mb-6">
+            {/* Name Input */}
+            <View className="mb-4">
+              <Text
+                className="text-sm font-semibold mb-2"
+                style={{ color: colors.textPrimary }}
+              >
+                Full Name
+              </Text>
+              <View
+                className="flex-row items-center rounded-xl px-4 py-3.5"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: error && name ? colors.error : colors.border,
+                }}
+              >
+                <Ionicons
+                  name="person-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 12 }}
+                />
+                <TextInput
+                  placeholder="Enter your name"
+                  placeholderTextColor={colors.textSecondary}
+                  value={name}
+                  onChangeText={(text) => {
+                    setName(text);
+                    setError('');
+                  }}
+                  autoCapitalize="words"
+                  autoComplete="name"
+                  className="flex-1"
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: 16,
+                  }}
+                />
+              </View>
+            </View>
+
+            {/* Email Input */}
+            <View className="mb-4">
+              <Text
+                className="text-sm font-semibold mb-2"
+                style={{ color: colors.textPrimary }}
+              >
+                Email
+              </Text>
+              <View
+                className="flex-row items-center rounded-xl px-4 py-3.5"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: error && email ? colors.error : colors.border,
+                }}
+              >
+                <Ionicons
+                  name="mail-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 12 }}
+                />
+                <TextInput
+                  placeholder="Enter your email"
+                  placeholderTextColor={colors.textSecondary}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setError('');
+                  }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  className="flex-1"
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: 16,
+                  }}
+                />
+              </View>
+            </View>
+
+            {/* Password Input */}
+            <View className="mb-4">
+              <Text
+                className="text-sm font-semibold mb-2"
+                style={{ color: colors.textPrimary }}
+              >
+                Password
+              </Text>
+              <View
+                className="flex-row items-center rounded-xl px-4 py-3.5"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: error && password ? colors.error : colors.border,
+                }}
+              >
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 12 }}
+                />
+                <TextInput
+                  placeholder="Create a password"
+                  placeholderTextColor={colors.textSecondary}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setError('');
+                  }}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoComplete="password-new"
+                  className="flex-1"
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: 16,
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  className="ml-2"
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Confirm Password Input */}
+            <View className="mb-6">
+              <Text
+                className="text-sm font-semibold mb-2"
+                style={{ color: colors.textPrimary }}
+              >
+                Confirm Password
+              </Text>
+              <View
+                className="flex-row items-center rounded-xl px-4 py-3.5"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor:
+                    error && confirmPassword ? colors.error : colors.border,
+                }}
+              >
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 12 }}
+                />
+                <TextInput
+                  placeholder="Confirm your password"
+                  placeholderTextColor={colors.textSecondary}
+                  value={confirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    setError('');
+                  }}
+                  secureTextEntry={!showConfirmPassword}
+                  autoCapitalize="none"
+                  autoComplete="password-new"
+                  className="flex-1"
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: 16,
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="ml-2"
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={
+                      showConfirmPassword ? 'eye-off-outline' : 'eye-outline'
+                    }
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Error Message */}
+            {error ? (
+              <View
+                className="rounded-xl px-4 py-3 mb-4 flex-row items-center"
+                style={{ backgroundColor: `${colors.error}15` }}
+              >
+                <Ionicons
+                  name="alert-circle"
+                  size={18}
+                  color={colors.error}
+                  style={{ marginRight: 8 }}
+                />
+                <Text
+                  className="text-sm flex-1"
+                  style={{ color: colors.error }}
+                >
+                  {error}
+                </Text>
+              </View>
+            ) : null}
+
+            {/* Sign Up Button */}
+            <PrimaryButton
+              title="Create Account"
+              onPress={handleRegister}
+              loading={isLoading}
+              disabled={isLoading}
+              size="lg"
+            />
+          </View>
+
+          {/* Footer */}
+          <View className="items-center">
+            <Text
+              className="text-sm"
+              style={{ color: colors.textSecondary }}
+            >
+              Already have an account?{' '}
+              <Link href="./login">
+                <Text
+                  className="font-semibold"
+                  style={{ color: colors.primary }}
+                >
+                  Sign In
+                </Text>
+              </Link>
+            </Text>
           </View>
         </View>
-
-        {error ? (
-          <View className="bg-red-100 border border-red-400 rounded-lg p-3 mt-2 w-64">
-            <Text className="text-red-700 text-sm text-center">{error}</Text>
-          </View>
-        ) : null}
-
-        <Text className="pt-2 text-gray-600">
-          Already have an account?{' '}
-          <Link href="./login" className="underline text-blue-700 ml-1">
-            Login
-          </Link>
-        </Text>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

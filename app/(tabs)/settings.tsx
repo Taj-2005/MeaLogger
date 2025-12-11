@@ -1,32 +1,100 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-  Alert,
-} from 'react-native';
-import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
+  Platform,
+  ScrollView,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { api } from '../../services/api';
+import { checkNotificationPermissions, requestNotificationPermissions } from '../../utils/notifications';
 
 const SettingsScreen = () => {
   const router = useRouter();
-  const { theme, toggleTheme, isDark, colors } = useTheme();
+  const { colors } = useTheme();
   const { logout } = useAuth();
+  const insets = useSafeAreaInsets();
+  const [settings, setSettings] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [showAbout, setShowAbout] = useState(false);
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const result = await api.getSettings();
+      if (result.success && result.data) {
+        setSettings(result.data.settings);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateSettings = async (updates: any) => {
+    try {
+      if (updates.notificationPermission !== undefined) {
+        if (updates.notificationPermission) {
+          if (Platform.OS === 'web') {
+            Alert.alert(
+              'Notifications Not Available',
+              'Push notifications are only available on mobile devices (iOS and Android). Please use the mobile app to enable notifications.'
+            );
+            return;
+          }
+          const hasPermission = await checkNotificationPermissions();
+          if (!hasPermission) {
+            const granted = await requestNotificationPermissions();
+            if (!granted) {
+              Alert.alert(
+                'Permission Required',
+                'Please enable notifications in your device settings to receive meal reminders.'
+              );
+              return;
+            }
+          }
+        }
+      }
+
+      const newSettings = { ...settings, ...updates };
+      const result = await api.updateSettings(updates);
+      if (result.success) {
+        setSettings(newSettings);
+      }
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      Alert.alert('Error', 'Failed to update settings');
+    }
+  };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: logout },
-      ],
-      { cancelable: true }
-    );
+    const isWeb = typeof window !== 'undefined';
+    const confirmed = isWeb
+      ? window.confirm('Are you sure you want to logout?')
+      : new Promise<boolean>((resolve) => {
+          Alert.alert('Logout', 'Are you sure you want to logout?', [
+            { text: 'Cancel', onPress: () => resolve(false), style: 'cancel' },
+            { text: 'Logout', onPress: () => resolve(true), style: 'destructive' },
+          ]);
+        });
+
+    if (confirmed) {
+      logout();
+    }
   };
 
   const SettingItem = ({
@@ -36,46 +104,44 @@ const SettingsScreen = () => {
     onPress,
     rightComponent,
     showArrow = true,
-    iconType = 'Ionicons',
   }: {
-    icon: string;
+    icon: keyof typeof Ionicons.glyphMap;
     title: string;
     subtitle?: string;
     onPress?: () => void;
     rightComponent?: React.ReactNode;
     showArrow?: boolean;
-    iconType?: 'Ionicons' | 'MaterialIcons' | 'FontAwesome';
   }) => {
-    const renderIcon = () => {
-      switch (iconType) {
-        case 'MaterialIcons':
-          return <MaterialIcons name={icon as any} size={24} color={colors.icon} />;
-        case 'FontAwesome':
-          return <FontAwesome name={icon as any} size={24} color={colors.icon} />;
-        default:
-          return <Ionicons name={icon as any} size={24} color={colors.icon} />;
-      }
-    };
-
     return (
       <TouchableOpacity
         onPress={onPress}
         activeOpacity={0.7}
-        className="flex-row items-center justify-between py-4 px-2 rounded-lg mb-1"
+        className="flex-row items-center justify-between py-4 px-4 rounded-xl mb-2"
         style={{
-          backgroundColor: colors.cardBackground,
-          borderBottomColor: colors.border,
-          borderBottomWidth: 1,
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.border,
         }}
       >
         <View className="flex-row items-center flex-1">
-          {renderIcon()}
-          <View className="ml-4 flex-1">
-            <Text className="text-base font-medium" style={{ color: colors.textPrimary }}>
+          <View
+            className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+            style={{ backgroundColor: `${colors.primary}15` }}
+          >
+            <Ionicons name={icon} size={22} color={colors.primary} />
+          </View>
+          <View className="flex-1">
+            <Text
+              className="text-base font-semibold"
+              style={{ color: colors.textPrimary }}
+            >
               {title}
             </Text>
             {subtitle && (
-              <Text className="text-sm mt-1" style={{ color: colors.textMuted }}>
+              <Text
+                className="text-sm mt-0.5"
+                style={{ color: colors.textSecondary }}
+              >
                 {subtitle}
               </Text>
             )}
@@ -84,193 +150,292 @@ const SettingsScreen = () => {
         <View className="flex-row items-center">
           {rightComponent}
           {showArrow && !rightComponent && (
-            <Ionicons name="chevron-forward" size={20} color={colors.iconMuted} />
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textSecondary}
+            />
           )}
         </View>
       </TouchableOpacity>
     );
   };
 
+  if (loading) {
+    return (
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.primaryBackground }}>
+    <View
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
+    >
       {/* Header */}
       <View
-        className="pt-12 pb-6 px-6 border-b"
-        style={{
-          borderBottomColor: colors.border,
-          backgroundColor: colors.primaryBackground,
+        className="pb-6 px-6 flex-row items-center"
+        style={{ 
+          backgroundColor: colors.surface,
+          paddingTop: insets.top + 20,
         }}
       >
-        <View className="flex-row items-center justify-between">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} /> 
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-            Settings
-          </Text>
-          <View
-            className="p-2 rounded-full"
-            style={{ backgroundColor: colors.surface }}
-          >
-            <Ionicons name="settings" size={24} color={colors.textPrimary} />
-          </View>
-        </View>
+        <Image
+          source={require('../../assets/logo.png')}
+          style={{ width: 32, height: 32, marginRight: 12 }}
+          resizeMode="contain"
+        />
+        <Text
+          className="text-2xl font-bold"
+          style={{ color: colors.textPrimary }}
+        >
+          Settings
+        </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
-        {/* Appearance Section */}
-        <View
-          className="mb-6 mt-4 p-4 rounded-xl"
-          style={{
-            backgroundColor: colors.cardBackground,
-            borderColor: colors.border,
-          }}
-        >
+      <ScrollView
+        className="flex-1 px-6"
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Account Section */}
+        <View className="mb-6 mt-6">
           <Text
-            className="text-xs font-semibold mb-3 uppercase tracking-wide"
-            style={{ color: colors.textMuted }}
+            className="text-sm font-bold mb-4 uppercase tracking-wide"
+            style={{ color: colors.textSecondary }}
           >
-            Appearance
+            Account
           </Text>
-
           <SettingItem
-            icon={isDark ? 'moon' : 'sunny'}
-            title={isDark ? 'Dark Mode' : 'Light Mode'}
-            subtitle={`Currently using ${theme} mode`}
+            icon="person-outline"
+            title="Profile"
+            subtitle="Manage your profile information"
+            onPress={() => router.push('/profile')}
+          />
+          <SettingItem
+            icon="notifications-outline"
+            title="Notifications"
+            subtitle={
+              Platform.OS === 'web'
+                ? 'Mobile only'
+                : settings?.notificationPermission
+                ? 'Enabled'
+                : 'Disabled'
+            }
             rightComponent={
               <Switch
-                value={isDark}
-                onValueChange={toggleTheme}
+                value={Platform.OS !== 'web' && (settings?.notificationPermission || false)}
+                onValueChange={(value) =>
+                  updateSettings({ notificationPermission: value })
+                }
+                disabled={Platform.OS === 'web'}
                 trackColor={{
-                  false: colors.switchTrackFalse,
-                  true: colors.switchTrackTrue,
+                  false: colors.border,
+                  true: colors.primary,
                 }}
-                thumbColor={colors.switchThumb}
+                thumbColor="#FFFFFF"
               />
             }
             showArrow={false}
           />
         </View>
 
-        {/* Account Section */}
-        <View
-          className="mb-6 p-4 rounded-xl"
-          style={{
-            backgroundColor: colors.cardBackground,
-            borderColor: colors.border,
-          }}
-        >
-          <Text
-            className="text-xs font-semibold mb-3 uppercase tracking-wide"
-            style={{ color: colors.textMuted }}
-          >
-            Account
-          </Text>
-          <SettingItem
-            icon="person"
-            title="Profile"
-            subtitle="Manage your profile information"
-            onPress={() => router.push('/profile')}
-          />
-          <SettingItem
-            icon="notifications"
-            title="Notifications"
-            subtitle="Configure notification preferences"
-            onPress={() => Alert.alert('Notifications', 'Notification settings would open here')}
-          />
-          <SettingItem
-            icon="shield-checkmark"
-            title="Privacy & Security"
-            subtitle="Manage your privacy settings"
-            onPress={() => Alert.alert('Privacy', 'Privacy settings would open here')}
-          />
-        </View>
-
-        {/* Meal Logging Section */}
-        <View
-          className="mb-6 p-4 rounded-xl"
-          style={{
-            backgroundColor: colors.cardBackground,
-            borderColor: colors.border,
-          }}
-        >
-          <Text
-            className="text-xs font-semibold mb-3 uppercase tracking-wide"
-            style={{ color: colors.textMuted }}
-          >
-            Meal Logging
-          </Text>
-          <SettingItem
-            icon="restaurant-menu"
-            iconType="MaterialIcons"
-            title="Default Meal Settings"
-            subtitle="Set default options for meal logging"
-            onPress={() => Alert.alert('Meal Settings', 'Meal settings would open here')}
-          />
-          <SettingItem
-            icon="camera"
-            title="Camera Settings"
-            subtitle="Configure camera preferences"
-            onPress={() => Alert.alert('Camera', 'Camera settings would open here')}
-          />
-          <SettingItem
-            icon="time"
-            title="Reminder Settings"
-            subtitle="Set up meal reminders"
-            onPress={() => Alert.alert('Reminders', 'Reminder settings would open here')}
-          />
-        </View>
-
         {/* Support Section */}
-        <View
-          className="mb-6 p-4 rounded-xl"
-          style={{
-            backgroundColor: colors.cardBackground,
-            borderColor: colors.border,
-          }}
-        >
+        <View className="mb-6">
           <Text
-            className="text-xs font-semibold mb-3 uppercase tracking-wide"
-            style={{ color: colors.textMuted }}
+            className="text-sm font-bold mb-4 uppercase tracking-wide"
+            style={{ color: colors.textSecondary }}
           >
             Support
           </Text>
           <SettingItem
-            icon="help-circle"
+            icon="help-circle-outline"
             title="Help & Support"
             subtitle="Get help or contact support"
-            onPress={() => Alert.alert('Help', 'Help & Support would open here')}
+            onPress={() =>
+              Alert.alert('Help', 'Contact support at support@meallogger.com')
+            }
           />
           <SettingItem
-            icon="information-circle"
+            icon="information-circle-outline"
             title="About MealLogger"
             subtitle="App version and information"
-            onPress={() => Alert.alert('About', 'About MealLogger v1.0.0')}
-          />
-          <SettingItem
-            icon="star"
-            title="Rate Us"
-            subtitle="Rate MealLogger on the App Store"
-            onPress={() => Alert.alert('Rate Us', 'This would open the App Store rating page')}
+            onPress={() => setShowAbout(true)}
           />
         </View>
 
         {/* Logout Section */}
-        <View
-          className="mb-10 p-4 rounded-xl"
-          style={{
-            backgroundColor: colors.cardBackground,
-            borderColor: colors.border,
-          }}
-        >
+        <View className="mb-10">
           <SettingItem
-            icon="log-out"
+            icon="log-out-outline"
             title="Logout"
             subtitle="Sign out of your account"
             onPress={handleLogout}
+            showArrow={false}
           />
         </View>
       </ScrollView>
+
+      {/* About Modal */}
+      <Modal
+        visible={showAbout}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowAbout(false)}
+      >
+        <View
+          className="flex-1 justify-end"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+        >
+          <View
+            className="rounded-t-3xl p-6"
+            style={{
+              backgroundColor: colors.surface,
+              maxHeight: '80%',
+            }}
+          >
+            <View className="flex-row items-center justify-between mb-6">
+              <Text
+                className="text-2xl font-bold"
+                style={{ color: colors.textPrimary }}
+              >
+                About MealLogger
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowAbout(false)}
+                className="p-2"
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* App Logo/Icon */}
+              <View className="items-center mb-6">
+                <View
+                  className="w-20 h-20 rounded-2xl items-center justify-center mb-4"
+                  style={{ backgroundColor: `${colors.primary}15` }}
+                >
+                  <Ionicons name="restaurant-outline" size={48} color={colors.primary} />
+                </View>
+                <Text
+                  className="text-3xl font-bold mb-2"
+                  style={{ color: colors.textPrimary }}
+                >
+                  MealLogger
+                </Text>
+                <Text
+                  className="text-base"
+                  style={{ color: colors.textSecondary }}
+                >
+                  Version 2.0.0
+                </Text>
+              </View>
+
+              {/* Description */}
+              <View className="mb-6">
+                <Text
+                  className="text-base leading-6"
+                  style={{ color: colors.textPrimary }}
+                >
+                  MealLogger is a comprehensive meal tracking application that
+                  helps you log, organize, and monitor your daily meals. Capture
+                  photos of your meals, track calories, and maintain a detailed
+                  timeline of your eating habits.
+                </Text>
+              </View>
+
+              {/* Features */}
+              <View className="mb-6">
+                <Text
+                  className="text-lg font-semibold mb-3"
+                  style={{ color: colors.textPrimary }}
+                >
+                  Features
+                </Text>
+                <View>
+                  {[
+                    { icon: 'camera-outline', text: 'Photo-based meal logging' },
+                    { icon: 'flame-outline', text: 'Calorie tracking' },
+                    { icon: 'calendar-outline', text: 'Meal timeline and history' },
+                    { icon: 'notifications-outline', text: 'Reminder notifications' },
+                    { icon: 'cloud-outline', text: 'Cloud sync across devices' },
+                  ].map((feature, index) => (
+                    <View key={index} className="flex-row items-center mb-2">
+                      <Ionicons 
+                        name={feature.icon as any} 
+                        size={18} 
+                        color={colors.primary} 
+                        style={{ marginRight: 8 }}
+                      />
+                      <Text
+                        className="text-base"
+                        style={{ color: colors.textPrimary }}
+                      >
+                        {feature.text}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              {/* Tech Stack */}
+              <View className="mb-6">
+                <Text
+                  className="text-lg font-semibold mb-3"
+                  style={{ color: colors.textPrimary }}
+                >
+                  Built With
+                </Text>
+                <Text
+                  className="text-base leading-6"
+                  style={{ color: colors.textSecondary }}
+                >
+                  React Native • Expo • TypeScript{'\n'}
+                  Node.js • Express • MongoDB{'\n'}
+                  Cloudinary • JWT Authentication
+                </Text>
+              </View>
+
+              {/* Contact */}
+              <View className="mb-6">
+                <Text
+                  className="text-lg font-semibold mb-3"
+                  style={{ color: colors.textPrimary }}
+                >
+                  Contact & Support
+                </Text>
+                <Text
+                  className="text-base"
+                  style={{ color: colors.textSecondary }}
+                >
+                  Email: support@meallogger.com{'\n'}
+                  Website: www.meallogger.com
+                </Text>
+              </View>
+
+              {/* Copyright */}
+              <View
+                className="items-center pt-4 border-t mb-4"
+                style={{ borderTopColor: colors.border }}
+              >
+                <Text
+                  className="text-sm"
+                  style={{ color: colors.textSecondary }}
+                >
+                  © 2025 MealLogger. All rights reserved.
+                </Text>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

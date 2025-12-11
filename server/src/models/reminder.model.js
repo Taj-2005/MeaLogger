@@ -40,7 +40,6 @@ const reminderSchema = new mongoose.Schema(
   }
 );
 
-// Index for user queries
 reminderSchema.index({ user: 1, enabled: 1 });
 
 module.exports = mongoose.model('Reminder', reminderSchema);

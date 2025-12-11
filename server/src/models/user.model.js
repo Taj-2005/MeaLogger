@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: [true, 'Email is required'],
-      unique: true, // This automatically creates an index
+      unique: true,
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
     passwordHash: {
       type: String,
       required: [true, 'Password is required'],
-      select: false, // Don't return password by default
+      select: false,
     },
     avatarUrl: {
       type: String,
@@ -41,16 +41,12 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Note: email index is automatically created by unique: true
 
-// Method to compare password
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.passwordHash);
 };
 
-// Method to add refresh token
 userSchema.methods.addRefreshToken = async function (token) {
-  // Reload user to get latest refreshTokens
   const user = await this.constructor.findById(this._id).select('+refreshTokens');
   if (!user) {
     throw new Error('User not found');
@@ -59,7 +55,6 @@ userSchema.methods.addRefreshToken = async function (token) {
   if (!user.refreshTokens) {
     user.refreshTokens = [];
   }
-  // Keep only last 5 refresh tokens
   if (user.refreshTokens.length >= 5) {
     user.refreshTokens.shift();
   }
@@ -68,9 +63,7 @@ userSchema.methods.addRefreshToken = async function (token) {
   return user;
 };
 
-// Method to remove refresh token
 userSchema.methods.removeRefreshToken = async function (token) {
-  // Reload user to get latest refreshTokens
   const user = await this.constructor.findById(this._id).select('+refreshTokens');
   if (!user) {
     return;
@@ -83,7 +76,6 @@ userSchema.methods.removeRefreshToken = async function (token) {
   return user;
 };
 
-// Pre-save hook to hash password
 userSchema.pre('save', async function (next) {
   if (!this.isModified('passwordHash')) {
     return next();

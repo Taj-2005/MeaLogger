@@ -9,24 +9,25 @@ import {
   ActivityIndicator,
   ScrollView,
   Dimensions,
-  Settings,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { Picker } from '@react-native-picker/picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { auth } from '../../firebaseConfig';
-import { saveMealToFirestore } from '../../firebaseHelpers';
+import { api } from '../../services/api';
 import { useTheme } from '../../contexts/ThemeContext';
-import SettingsButton from '../components/SettingsBtn';
+import PrimaryButton from '../components/PrimaryButton';
 
 const { width } = Dimensions.get('window');
 
 export default function MealLoggingScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [title, setTitle] = useState('');
   const [mealType, setMealType] = useState('breakfast');
@@ -37,19 +38,28 @@ export default function MealLoggingScreen() {
   const [error, setError] = useState('');
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.8,
-    });
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+        aspect: [4, 3],
+      });
 
-    if (!result.canceled) {
-      setCapturedImage(result.assets[0].uri);
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (!result.canceled) {
+        setCapturedImage(result.assets[0].uri);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setError('');
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      setError('Failed to capture image. Please try again.');
     }
   };
 
   const handleSaveMeal = async () => {
+    setError('');
+
     if (!title.trim()) {
       setError('Please enter a meal title');
       return;
@@ -60,186 +70,301 @@ export default function MealLoggingScreen() {
     }
 
     setIsLoading(true);
-    setError('');
 
     try {
-      const mealId = Date.now().toString();
-      const userEmail = auth.currentUser?.email ?? 'guest@example.com';
-
-      const mealData = {
-        id: mealId,
+      const result = await api.createMeal({
         title,
-        mealType,
+        type: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
         date,
         calories: calories ? parseInt(calories) : undefined,
-        timestamp: new Date().toISOString(),
-        userEmail,
-      };
+        imageUri: capturedImage,
+      });
 
-      await saveMealToFirestore(mealId, mealData);
-      await AsyncStorage.setItem(`meal_image_${mealId}`, capturedImage);
-
-      const existingMeals = await AsyncStorage.getItem('meals');
-      const meals = existingMeals ? JSON.parse(existingMeals) : [];
-      meals.unshift({ ...mealData, imageUri: capturedImage });
-      await AsyncStorage.setItem('meals', JSON.stringify(meals));
-
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Success', 'Meal logged successfully!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            setTitle('');
-            setMealType('breakfast');
-            setDate(new Date().toISOString().split('T')[0]);
-            setCalories('');
-            setCapturedImage(null);
-            router.push('./timeline');
-          },
-        },
-      ]);
-    } catch (error) {
+      if (result.success) {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setTitle('');
+        setMealType('breakfast');
+        setDate(new Date().toISOString().split('T')[0]);
+        setCalories('');
+        setCapturedImage(null);
+        router.push('./timeline');
+      }
+    } catch (error: any) {
       console.error('Error saving meal:', error);
-      setError('Failed to save meal. Please try again.');
+      setError(error.message || 'Failed to save meal. Please try again.');
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsLoading(false);
     }
   };
 
+
   return (
-    <View
-      className="flex-1 pt-20 p-4"
-      style={{ backgroundColor: colors.primaryBackground }}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
     >
-      <ScrollView>
-        <View className="flex-row items-center justify-between  mb-4">
-          <Text
-            className="text-2xl font-bold"
-            style={{ color: colors.textPrimary }}
-          >
-            Log Your Meal
-          </Text>
-          <SettingsButton />
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View
+          className="pb-6 px-6"
+          style={{ 
+            backgroundColor: colors.surface,
+            paddingTop: insets.top + 20,
+          }}
+        >
+          <View className="mb-4 flex-row items-center">
+            <Image
+              source={require('../../assets/logo.png')}
+              style={{ width: 32, height: 32, marginRight: 12 }}
+              resizeMode="contain"
+            />
+            <Text
+              className="text-2xl font-bold"
+              style={{ color: colors.textPrimary }}
+            >
+              Log Your Meal
+            </Text>
+          </View>
         </View>
 
-        <TouchableOpacity
-          onPress={pickImage}
-          className="border-2 border-dashed rounded-lg h-48 mb-6 flex items-center justify-center"
-          style={{ borderColor: colors.border }}
-        >
-          {capturedImage ? (
-            <Image
-              source={{ uri: capturedImage }}
-              style={{ width: width - 32, height: 192, borderRadius: 12 }}
-              resizeMode="cover"
-            />
-          ) : (
-            <View className="flex flex-col justify-center items-center">
+        <View className="px-6 pt-6">
+          {/* Image Capture Section */}
+          <View className="mb-6">
+            <Text
+              className="text-base font-semibold mb-3"
+              style={{ color: colors.textPrimary }}
+            >
+              Meal Photo *
+            </Text>
+            <TouchableOpacity
+              onPress={pickImage}
+              activeOpacity={0.8}
+              className="rounded-2xl overflow-hidden"
+              style={{
+                height: 200,
+                backgroundColor: colors.surface,
+                borderWidth: 2,
+                borderColor: capturedImage ? colors.primary : colors.border,
+                borderStyle: capturedImage ? 'solid' : 'dashed',
+              }}
+            >
+              {capturedImage ? (
+                <Image
+                  source={{ uri: capturedImage }}
+                  className="w-full h-full"
+                  resizeMode="cover"
+                />
+              ) : (
+                <View className="flex-1 items-center justify-center">
+                  <View
+                    className="w-16 h-16 rounded-full items-center justify-center mb-3"
+                    style={{ backgroundColor: `${colors.primary}15` }}
+                  >
+                    <Ionicons name="camera" size={32} color={colors.primary} />
+                  </View>
+                  <Text
+                    className="text-base font-semibold mb-1"
+                    style={{ color: colors.textPrimary }}
+                  >
+                    Tap to Capture
+                  </Text>
+                  <Text
+                    className="text-sm"
+                    style={{ color: colors.textSecondary }}
+                  >
+                    Take a photo of your meal
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Title Input */}
+          <View className="mb-4">
+            <Text
+              className="text-base font-semibold mb-3"
+              style={{ color: colors.textPrimary }}
+            >
+              Meal Title *
+            </Text>
+            <View
+              className="rounded-xl px-4 py-3.5"
+              style={{
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: error && !title ? colors.error : colors.border,
+              }}
+            >
+              <TextInput
+                placeholder="e.g., Grilled Chicken Salad"
+                placeholderTextColor={colors.textSecondary}
+                value={title}
+                onChangeText={(text) => {
+                  setTitle(text);
+                  setError('');
+                }}
+                className="text-base"
+                style={{ color: colors.textPrimary }}
+              />
+            </View>
+          </View>
+
+          {/* Meal Type Picker */}
+          <View className="mb-4">
+            <Text
+              className="text-base font-semibold mb-3"
+              style={{ color: colors.textPrimary }}
+            >
+              Meal Type
+            </Text>
+            <View
+              className="rounded-xl overflow-hidden"
+              style={{
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Picker
+                selectedValue={mealType}
+                onValueChange={(value) => setMealType(value)}
+                style={{
+                  color: colors.textPrimary,
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <Picker.Item
+                  label="Breakfast"
+                  value="breakfast"
+                  color={colors.textPrimary}
+                />
+                <Picker.Item
+                  label="Lunch"
+                  value="lunch"
+                  color={colors.textPrimary}
+                />
+                <Picker.Item
+                  label="Dinner"
+                  value="dinner"
+                  color={colors.textPrimary}
+                />
+                <Picker.Item
+                  label="Snack"
+                  value="snack"
+                  color={colors.textPrimary}
+                />
+              </Picker>
+            </View>
+          </View>
+
+          {/* Date Input */}
+          <View className="mb-4">
+            <Text
+              className="text-base font-semibold mb-3"
+              style={{ color: colors.textPrimary }}
+            >
+              Date
+            </Text>
+            <View
+              className="rounded-xl px-4 py-3.5 flex-row items-center"
+              style={{
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
               <Ionicons
-                name="camera-outline"
-                size={30}
-                color={isDark ? colors.textMuted : '#000'}
+                name="calendar-outline"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <TextInput
+                value={date}
+                onChangeText={setDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={colors.textSecondary}
+                className="flex-1 text-base"
+                style={{ color: colors.textPrimary }}
+              />
+            </View>
+          </View>
+
+          {/* Calories Input */}
+          <View className="mb-6">
+            <Text
+              className="text-base font-semibold mb-3"
+              style={{ color: colors.textPrimary }}
+            >
+              Calories (Optional)
+            </Text>
+            <View
+              className="rounded-xl px-4 py-3.5 flex-row items-center"
+              style={{
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Ionicons
+                name="flame-outline"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <TextInput
+                placeholder="Enter calories"
+                placeholderTextColor={colors.textSecondary}
+                value={calories}
+                onChangeText={(text) => {
+                  setCalories(text.replace(/[^0-9]/g, ''));
+                  setError('');
+                }}
+                keyboardType="number-pad"
+                className="flex-1 text-base"
+                style={{ color: colors.textPrimary }}
+              />
+            </View>
+          </View>
+
+          {/* Error Message */}
+          {error ? (
+            <View
+              className="rounded-xl px-4 py-3 mb-4 flex-row items-center"
+              style={{ backgroundColor: `${colors.error}15` }}
+            >
+              <Ionicons
+                name="alert-circle"
+                size={18}
+                color={colors.error}
+                style={{ marginRight: 8 }}
               />
               <Text
-                className="text-gray-500"
-                style={{ color: colors.textMuted }}
+                className="text-sm flex-1"
+                style={{ color: colors.error }}
               >
-                Tap to take photo
+                {error}
               </Text>
             </View>
-          )}
-        </TouchableOpacity>
+          ) : null}
 
-        <TextInput
-          placeholder="Meal Title"
-          placeholderTextColor={colors.textMuted}
-          value={title}
-          onChangeText={setTitle}
-          className="border rounded-lg p-3 mb-4"
-          style={{
-            borderColor: colors.border,
-            color: colors.textPrimary,
-            backgroundColor: colors.surface,
-          }}
-        />
-
-        <View
-          className="mb-4 rounded-lg"
-          style={{
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            borderWidth: 1,
-          }}
-        >
-          <Picker
-            selectedValue={mealType}
-            onValueChange={setMealType}
-            style={{ color: colors.textPrimary }}
-            dropdownIconColor={colors.textPrimary}
-          >
-            <Picker.Item label="Breakfast" value="breakfast" />
-            <Picker.Item label="Lunch" value="lunch" />
-            <Picker.Item label="Dinner" value="dinner" />
-            <Picker.Item label="Snack" value="snack" />
-          </Picker>
+          {/* Save Button */}
+          <PrimaryButton
+            title="Save Meal"
+            onPress={handleSaveMeal}
+            loading={isLoading}
+            disabled={isLoading}
+            size="lg"
+            variant="primary"
+          />
         </View>
-
-        <TextInput
-          placeholder="Date (YYYY-MM-DD)"
-          placeholderTextColor={colors.textMuted}
-          value={date}
-          onChangeText={setDate}
-          className="border rounded-lg p-3 mb-4"
-          style={{
-            borderColor: colors.border,
-            color: colors.textPrimary,
-            backgroundColor: colors.surface,
-          }}
-        />
-
-        <TextInput
-          placeholder="Calories (optional)"
-          placeholderTextColor={colors.textMuted}
-          value={calories}
-          onChangeText={setCalories}
-          keyboardType="numeric"
-          className="border rounded-lg p-3 mb-4"
-          style={{
-            borderColor: colors.border,
-            color: colors.textPrimary,
-            backgroundColor: colors.surface,
-          }}
-        />
-
-        {error ? (
-          <Text className="mb-4 text-red-600">
-            {error}
-          </Text>
-        ) : null}
-
-        <TouchableOpacity
-          onPress={handleSaveMeal}
-          disabled={isLoading}
-          className={`py-4 rounded-lg ${
-            isLoading ? 'bg-gray-400' : 'bg-blue-600'
-          }`}
-          style={{
-            backgroundColor: isLoading ? colors.border : colors.accent,
-          }}
-        >
-          {isLoading ? (
-            <ActivityIndicator color={colors.switchThumb} />
-          ) : (
-            <Text
-              className="font-semibold text-center"
-              style={{ color: colors.switchThumb }}
-            >
-              Save Meal
-            </Text>
-          )}
-        </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

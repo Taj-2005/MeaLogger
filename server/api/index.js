@@ -1,12 +1,8 @@
-// Vercel Serverless Function Entry Point
-// This file is used by Vercel to handle all API requests
-
 const mongoose = require('mongoose');
 const app = require('../src/app');
 const config = require('../src/config');
 const logger = require('../src/utils/logger');
 
-// Cache MongoDB connection for serverless functions
 let cachedConnection = null;
 
 async function connectDatabase() {
@@ -25,11 +21,9 @@ async function connectDatabase() {
   }
 }
 
-// Connect to database before handling requests
 connectDatabase().catch((err) => {
   logger.error('Failed to connect to database:', err);
 });
 
-// Export the Express app for Vercel
 module.exports = app;
 

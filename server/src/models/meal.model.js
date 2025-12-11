@@ -42,11 +42,9 @@ const mealSchema = new mongoose.Schema(
   }
 );
 
-// Compound index for user and date queries
 mealSchema.index({ user: 1, date: -1 });
 mealSchema.index({ user: 1, createdAt: -1 });
 
-// Virtual for formatted date
 mealSchema.virtual('formattedDate').get(function () {
   return this.date.toISOString().split('T')[0];
 });

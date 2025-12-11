@@ -8,35 +8,38 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateProfile, updateEmail, sendPasswordResetEmail, getAuth } from 'firebase/auth';
-import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import SettingsButton from '../components/SettingsBtn';
 import { useTheme } from '../../contexts/ThemeContext';
+import { api } from '../../services/api';
+import PrimaryButton from '../components/PrimaryButton';
 
 export default function Profile() {
-  const { user, logout } = useAuth();
-  const auth = getAuth();
+  const { user, logout, refreshUser } = useAuth();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
-  const [name, setName] = useState(user?.displayName || '');
+  const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || null);
   const [loading, setLoading] = useState(false);
-
   const [changed, setChanged] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    setName(user?.displayName || '');
-    setEmail(user?.email || '');
+    if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+      setAvatarUrl(user.avatarUrl || null);
+    }
   }, [user]);
-
-  const isEmailValid = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
 
   const handleUpdateProfile = async () => {
     setError('');
@@ -47,21 +50,11 @@ export default function Profile() {
       return;
     }
 
-    if (!email.trim() || !isEmailValid(email)) {
-      setError('Please enter a valid email');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      if (user && name !== user.displayName) {
-        await updateProfile(auth.currentUser!, { displayName: name });
-      }
-      if (user && email !== user.email) {
-        await updateEmail(auth.currentUser!, email);
-      }
-
+      await api.updateProfile(name);
+      await refreshUser();
       setSuccess('Profile updated successfully');
       setChanged(false);
     } catch (e: any) {
@@ -72,230 +65,298 @@ export default function Profile() {
     }
   };
 
-  const handleChangePassword = () => {
-    if (!email) {
-      setError('Email is required to reset password');
-      return;
+  const handleAvatarUpdate = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setLoading(true);
+        try {
+          await api.updateProfile(undefined, result.assets[0].uri);
+          await refreshUser();
+          setSuccess('Avatar updated successfully');
+        } catch (e: any) {
+          setError(e.message || 'Failed to update avatar');
+        } finally {
+          setLoading(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
     }
-    setError('');
-    Alert.alert(
-      'Change Password',
-      'A password reset email will be sent to your email address. Continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Send Email',
-          onPress: async () => {
-            try {
-              await sendPasswordResetEmail(auth, email);
-              Alert.alert('Success', 'Password reset email sent!');
-            } catch (e: any) {
-              console.error(e);
-              Alert.alert('Error', e.message || 'Failed to send password reset email');
-            }
-          },
-        },
-      ]
-    );
   };
 
   const handleLogout = async () => {
-    setLoading(true);
-    try {
-      await logout();
-      Alert.alert('Logged out', 'You have been logged out.');
-    } catch (e) {
-      Alert.alert('Error', 'Failed to logout. Please try again.');
-    } finally {
-      setLoading(false);
+    const isWeb = typeof window !== 'undefined';
+    const confirmed = isWeb
+      ? window.confirm('Are you sure you want to logout?')
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert('Logout', 'Are you sure you want to logout?', [
+            { text: 'Cancel', onPress: () => resolve(false), style: 'cancel' },
+            { text: 'Logout', onPress: () => resolve(true), style: 'destructive' },
+          ]);
+        });
+
+    if (confirmed) {
+      setLoading(true);
+      try {
+        await logout();
+      } catch (e) {
+        Alert.alert('Error', 'Failed to logout. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
-  const avatarText = user?.displayName
-    ? user.displayName
+  const avatarText = user?.name
+    ? user.name
         .split(' ')
         .map((n) => n[0])
         .join('')
         .toUpperCase()
+        .substring(0, 2)
     : 'U';
 
   return (
-    <>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
+    >
+      {/* Header */}
       <View
-        style={{ backgroundColor: colors.primaryBackground }}
-        className="flex flex-col items-end w-full pt-10 pr-2 z-50"
+        className="pb-6 px-6 flex-row items-center justify-between"
+        style={{ 
+          backgroundColor: colors.surface,
+          paddingTop: insets.top + 20,
+        }}
       >
+        <View className="flex-row items-center">
+          <Image
+            source={require('../../assets/logo.png')}
+            style={{ width: 32, height: 32, marginRight: 12 }}
+            resizeMode="contain"
+          />
+          <Text
+            className="text-2xl font-bold"
+            style={{ color: colors.textPrimary }}
+          >
+            Profile
+          </Text>
+        </View>
         <SettingsButton />
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ backgroundColor: colors.primaryBackground }}
-        className="flex-1 justify-center items-center p-4"
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ padding: 24 }}
+        showsVerticalScrollIndicator={false}
       >
-        <View
-          className="w-full max-w-md rounded-xl border"
-          style={{
-            backgroundColor: colors.cardBackground,
-            borderColor: colors.border,
-          }}
-        >
-          {/* Header */}
-          <View className="items-center py-6">
-            {user?.photoURL ? (
+        {/* Avatar Section */}
+        <View className="items-center mb-8">
+          <TouchableOpacity
+            onPress={handleAvatarUpdate}
+            activeOpacity={0.8}
+            className="relative"
+          >
+            {avatarUrl ? (
               <View
-                className="w-24 h-24 rounded-full overflow-hidden border-2"
-                style={{ borderColor: colors.accent }}
+                className="w-28 h-28 rounded-full overflow-hidden border-4"
+                style={{ borderColor: colors.primary }}
               >
-                <img
-                  src={user.photoURL}
-                  alt="User Avatar"
-                  className="w-full h-full object-cover"
+                <Image
+                  source={{ uri: avatarUrl }}
+                  className="w-full h-full"
+                  resizeMode="cover"
                 />
               </View>
             ) : (
               <View
-                className="w-24 h-24 rounded-full flex justify-center items-center"
-                style={{ backgroundColor: colors.accent }}
+                className="w-28 h-28 rounded-full items-center justify-center"
+                style={{ backgroundColor: colors.primary }}
               >
                 <Text
                   className="text-4xl font-bold"
-                  style={{ color: colors.textPrimary }}
+                  style={{ color: '#FFFFFF' }}
                 >
                   {avatarText}
                 </Text>
               </View>
             )}
+            <View
+              className="absolute bottom-0 right-0 w-10 h-10 rounded-full items-center justify-center border-4"
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.surface,
+              }}
+            >
+              <Ionicons name="camera" size={20} color={colors.primary} />
+            </View>
+          </TouchableOpacity>
+          <Text
+            className="text-xl font-bold mt-4"
+            style={{ color: colors.textPrimary }}
+          >
+            {user?.name || 'Your Profile'}
+          </Text>
+          <Text
+            className="text-sm mt-1"
+            style={{ color: colors.textSecondary }}
+          >
+            {user?.email || ''}
+          </Text>
+        </View>
+
+        {/* Form Section */}
+        <View
+          className="rounded-2xl p-6 mb-6"
+          style={{
+            backgroundColor: colors.surface,
+            shadowColor: colors.shadow,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 3,
+          }}
+        >
+          {/* Name Input */}
+          <View className="mb-4">
             <Text
-              className="text-lg font-semibold mt-4"
+              className="text-sm font-semibold mb-2"
               style={{ color: colors.textPrimary }}
             >
-              {user?.displayName || 'Your Profile'}
+              Full Name
             </Text>
+            <View
+              className="rounded-xl px-4 py-3.5 flex-row items-center"
+              style={{
+                backgroundColor: colors.background,
+                borderWidth: 1,
+                borderColor: error && !name ? colors.error : colors.border,
+              }}
+            >
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <TextInput
+                value={name}
+                onChangeText={(text) => {
+                  setName(text);
+                  setChanged(true);
+                  setError('');
+                  setSuccess('');
+                }}
+                placeholder="Enter your name"
+                placeholderTextColor={colors.textSecondary}
+                className="flex-1 text-base"
+                style={{ color: colors.textPrimary }}
+              />
+            </View>
           </View>
 
-          <View className="px-4 pb-6">
-            {/* Name */}
+          {/* Email (read-only) */}
+          <View className="mb-6">
             <Text
-              className="text-xs font-semibold mb-2 uppercase tracking-wide"
-              style={{ color: colors.textMuted }}
-            >
-              Name
-            </Text>
-            <TextInput
-              value={name}
-              onChangeText={(text) => {
-                setName(text);
-                setChanged(true);
-                setError('');
-                setSuccess('');
-              }}
-              placeholder="Your name"
-              placeholderTextColor={colors.textMuted}
-              className="rounded-md px-3 py-2 mb-4 text-base"
-              style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                color: colors.textPrimary,
-                backgroundColor: colors.surface,
-              }}
-            />
-
-            {/* Email */}
-            <Text
-              className="text-xs font-semibold mb-2 uppercase tracking-wide"
-              style={{ color: colors.textMuted }}
+              className="text-sm font-semibold mb-2"
+              style={{ color: colors.textPrimary }}
             >
               Email
             </Text>
-            <TextInput
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setChanged(true);
-                setError('');
-                setSuccess('');
-              }}
-              placeholder="Your email"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              className="rounded-md px-3 py-2 mb-4 text-base"
+            <View
+              className="rounded-xl px-4 py-3.5 flex-row items-center opacity-60"
               style={{
+                backgroundColor: colors.background,
                 borderWidth: 1,
                 borderColor: colors.border,
-                color: colors.textPrimary,
-                backgroundColor: colors.surface,
               }}
-            />
+            >
+              <Ionicons
+                name="mail-outline"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 12 }}
+              />
+              <Text
+                className="flex-1 text-base"
+                style={{ color: colors.textPrimary }}
+              >
+                {email}
+              </Text>
+            </View>
+            <Text
+              className="text-xs mt-1"
+              style={{ color: colors.textSecondary }}
+            >
+              Email cannot be changed
+            </Text>
+          </View>
 
-            {/* Status Message */}
-            {error ? (
-              <Text className="text-sm text-center font-semibold mb-4" style={{ color: 'red' }}>
+          {/* Status Messages */}
+          {error ? (
+            <View
+              className="rounded-xl px-4 py-3 mb-4 flex-row items-center"
+              style={{ backgroundColor: `${colors.error}15` }}
+            >
+              <Ionicons
+                name="alert-circle"
+                size={18}
+                color={colors.error}
+                style={{ marginRight: 8 }}
+              />
+              <Text className="text-sm flex-1" style={{ color: colors.error }}>
                 {error}
               </Text>
-            ) : success ? (
-              <Text className="text-sm text-center font-semibold mb-4" style={{ color: 'green' }}>
+            </View>
+          ) : null}
+
+          {success ? (
+            <View
+              className="rounded-xl px-4 py-3 mb-4 flex-row items-center"
+              style={{ backgroundColor: `${colors.success}15` }}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={18}
+                color={colors.success}
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                className="text-sm flex-1"
+                style={{ color: colors.success }}
+              >
                 {success}
               </Text>
-            ) : null}
-
-            {/* Buttons */}
-          <TouchableOpacity
-            disabled={!changed || loading}
-            onPress={handleUpdateProfile}
-            className={`w-full rounded-lg py-3 mb-4 flex-row justify-center items-center shadow-md ${
-              !changed || loading ? 'opacity-60' : ''
-            }`}
-            style={{
-              backgroundColor: !changed || loading ? colors.border : colors.accent,
-              elevation: 4, // for Android shadow
-            }}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color={colors.textPrimary} />
-            ) : (
-              <View className="flex-row items-center">
-                <MaterialIcons name="update" size={20} color="white" style={{ marginRight: 8 }} />
-                <Text className="text-white text-center font-semibold text-lg">Update Profile</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleChangePassword}
-            className="w-full rounded-lg py-3 mb-4 flex-row justify-center items-center shadow-md"
-            style={{ backgroundColor: '#f59e0b', elevation: 4 }}
-          >
-            <View className="flex-row items-center">
-              <MaterialIcons name="password" size={20} color="white" style={{ marginRight: 8 }} />
-              <Text className="text-white text-center font-semibold text-lg">Change Password</Text>
             </View>
-          </TouchableOpacity>
+          ) : null}
 
-          <TouchableOpacity
-            onPress={handleLogout}
-            disabled={loading}
-            className={`w-full rounded-lg py-3 flex-row justify-center items-center shadow-md ${
-              loading ? 'opacity-60' : ''
-            }`}
-            style={{
-              backgroundColor: loading ? colors.border : '#2563eb',
-              elevation: 4,
-            }}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color={colors.textPrimary} />
-            ) : (
-              <View className="flex-row items-center">
-                <MaterialIcons name="logout" size={20} color="white" style={{ marginRight: 8 }} />
-                <Text className="text-white text-center font-semibold text-lg">Log Out</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          </View>
+          {/* Update Button */}
+          <PrimaryButton
+            title="Update Profile"
+            onPress={handleUpdateProfile}
+            loading={loading}
+            disabled={!changed || loading}
+            variant="primary"
+          />
         </View>
-      </KeyboardAvoidingView>
-    </>
+
+        {/* Logout Button */}
+        <PrimaryButton
+          title="Log Out"
+          onPress={handleLogout}
+          loading={loading}
+          disabled={loading}
+          variant="error"
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
