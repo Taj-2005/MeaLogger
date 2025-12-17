@@ -171,12 +171,26 @@ const createMeal = async (req, res) => {
       },
     });
   } catch (error) {
+    // Ensure we haven't already sent a response
+    if (res.headersSent) {
+      logger.error('Create meal error after response sent:', {
+        error: error.message,
+        userId: req.userId,
+      });
+      return;
+    }
+
     logger.error('Create meal error:', {
       error: error.message,
       stack: error.stack,
       name: error.name,
       userId: req.userId,
-      body: req.body,
+      body: req.body ? {
+        title: req.body.title,
+        type: req.body.type,
+        hasImageUrl: !!req.body.imageUrl,
+        imageUrlLength: req.body.imageUrl?.length,
+      } : null,
       contentType: req.headers['content-type'],
     });
     
@@ -196,10 +210,15 @@ const createMeal = async (req, res) => {
       });
     }
 
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create meal. Please try again.',
-    });
+    // Always return a proper response, never let it crash
+    try {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create meal. Please try again.',
+      });
+    } catch (responseError) {
+      logger.error('Failed to send error response:', responseError);
+    }
   }
 };
 

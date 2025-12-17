@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { cancelAllNotifications } from '../utils/notifications';
 
@@ -57,8 +57,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
               setIsLoading(false);
               return;
             }
-          } catch (error: any) {
-            if (error.message?.includes('Session expired') || error.message?.includes('401')) {
+          } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('Session expired') || errorMessage.includes('401')) {
               if (refreshToken) {
                 try {
                   const refreshed = await api.refreshAccessToken();
@@ -118,6 +119,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         await AsyncStorage.multiRemove(['rememberMe', 'storedEmail']);
       }
+    } catch (error: unknown) {
+      // Re-throw error so UI can display it
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -128,6 +132,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const data = await api.register(name, email, password);
       setUser(data.user);
+    } catch (error: unknown) {
+      // Re-throw error so UI can display it
+      throw error;
     } finally {
       setIsLoading(false);
     }

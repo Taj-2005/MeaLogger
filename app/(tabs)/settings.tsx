@@ -254,7 +254,7 @@ const SettingsScreen = () => {
             title="Help & Support"
             subtitle="Get help or contact support"
             onPress={() =>
-              Alert.alert('Help', 'Contact support at support@meallogger.com')
+              Alert.alert('Help', 'Contact support at linkupcontact247@gmail.com')
             }
           />
           <SettingItem
@@ -411,7 +411,7 @@ const SettingsScreen = () => {
                   className="text-base"
                   style={{ color: colors.textSecondary }}
                 >
-                  Email: support@meallogger.com{'\n'}
+                  Email: linkupcontact247@gmail.com{'\n'}
                   Website: www.meallogger.com
                 </Text>
               </View>

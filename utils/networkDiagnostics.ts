@@ -1,6 +1,7 @@
-import { isOnline, getNetworkState } from './network';
+import { getApiBaseURL } from './apiConfig';
+import { getNetworkState, isOnline } from './network';
 
-const API_BASE_URL = 'https://mea-logger.vercel.app/api/v1';
+const API_BASE_URL = getApiBaseURL();
 
 export interface NetworkDiagnostics {
   isOnline: boolean;

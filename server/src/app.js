@@ -17,14 +17,35 @@ const app = express();
 
 app.set('trust proxy', 1);
 
+// CORS configuration - allow all origins for mobile apps (CORS doesn't apply to mobile, but good to have)
+app.use(cors({
+  origin: '*', // Allow all origins (mobile apps don't use CORS, but this helps with web)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false,
+}));
+
 app.use(helmet());
 
-const jsonParser = express.json({ limit: '10mb' });
+// Increased limit for JSON payloads (Cloudinary URLs can be long)
+const jsonParser = express.json({ limit: '10mb', strict: false });
 const urlencodedParser = express.urlencoded({ extended: true, limit: '10mb' });
 
 // JSON body parser - only for non-multipart requests
 app.use((req, res, next) => {
   const contentType = req.headers['content-type'] || '';
+  
+  // Log all POST/PUT/PATCH requests for debugging
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    logger.info('Incoming request:', {
+      method: req.method,
+      url: req.url,
+      contentType,
+      contentLength: req.headers['content-length'],
+      hasBody: !!req.body,
+    });
+  }
+  
   if (contentType.includes('multipart/form-data')) {
     return next();
   }
@@ -37,15 +58,32 @@ app.use((req, res, next) => {
           contentType: req.headers['content-type'],
           url: req.url,
           method: req.method,
+          contentLength: req.headers['content-length'],
         });
         return res.status(400).json({
           success: false,
           message: 'Invalid JSON in request body',
         });
       }
+      // Log successful parsing
+      if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+        logger.info('JSON body parsed successfully:', {
+          url: req.url,
+          bodyKeys: req.body ? Object.keys(req.body) : [],
+          bodySize: req.body ? JSON.stringify(req.body).length : 0,
+        });
+      }
       next();
     });
   } else {
+    // For requests without Content-Type, try to parse as JSON if there's a body
+    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.headers['content-length']) {
+      logger.warn('Request without Content-Type header:', {
+        method: req.method,
+        url: req.url,
+        contentLength: req.headers['content-length'],
+      });
+    }
     next();
   }
 });
@@ -88,6 +126,21 @@ app.get('/api/v1/health', (req, res) => {
     message: 'Server is running',
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv,
+  });
+});
+
+// Test endpoint for POST requests (to verify POST works at all)
+app.post('/api/v1/test-post', (req, res) => {
+  logger.info('Test POST endpoint hit', {
+    body: req.body,
+    contentType: req.headers['content-type'],
+    bodyKeys: req.body ? Object.keys(req.body) : [],
+  });
+  res.json({
+    success: true,
+    message: 'POST request received successfully',
+    receivedBody: req.body,
+    timestamp: new Date().toISOString(),
   });
 });
 

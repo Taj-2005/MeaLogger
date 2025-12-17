@@ -104,7 +104,7 @@ npm run dev
 npm start
 ```
 
-The server will start on `http://localhost:4000` (or your configured PORT).
+The server will start on `http://115.244.141.202:4000` (or your configured PORT).
 
 ## API Endpoints
 
@@ -159,7 +159,7 @@ The server will start on `http://localhost:4000` (or your configured PORT).
 
 ```bash
 # Register
-curl -X POST http://localhost:4000/api/v1/auth/register \
+curl -X POST http://115.244.141.202:4000/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "John Doe",
@@ -168,7 +168,7 @@ curl -X POST http://localhost:4000/api/v1/auth/register \
   }'
 
 # Login
-curl -X POST http://localhost:4000/api/v1/auth/login \
+curl -X POST http://115.244.141.202:4000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@example.com",
@@ -176,7 +176,7 @@ curl -X POST http://localhost:4000/api/v1/auth/login \
   }'
 
 # Create Meal (with image URL)
-curl -X POST http://localhost:4000/api/v1/meals \
+curl -X POST http://115.244.141.202:4000/api/v1/meals \
   -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -188,7 +188,7 @@ curl -X POST http://localhost:4000/api/v1/meals \
   }'
 
 # Create Meal (with image file upload)
-curl -X POST http://localhost:4000/api/v1/meals \
+curl -X POST http://115.244.141.202:4000/api/v1/meals \
   -H "Authorization: Bearer <accessToken>" \
   -F "title=Breakfast" \
   -F "type=breakfast" \

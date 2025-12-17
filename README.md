@@ -89,17 +89,57 @@ cd server
 npm run dev
 ```
 
-The server will run on `http://localhost:4000` (or your configured PORT).
+The server will run on `http://115.244.141.202:4000` (or your configured PORT).
 
 ### 5. Configure API Endpoint
 
-Update the API base URL in `services/api.ts`:
+The app automatically detects the correct API URL based on your platform:
 
-```typescript
-const API_BASE_URL = 'http://localhost:4000/api/v1';
-// Or use your deployed backend URL:
-// const API_BASE_URL = 'https://your-backend.vercel.app/api/v1';
+- **Android Emulator**: Uses `10.0.2.2` (automatic)
+- **Android Physical Device**: **Requires LAN IP configuration** (see below)
+- **iOS Simulator**: Uses `localhost` (automatic)
+- **Web**: Uses `localhost` (automatic)
+
+#### For Android Physical Devices (Expo Go):
+
+Android physical devices **cannot** access `localhost` - it refers to the device itself, not your development machine.
+
+**To fix:**
+
+1. Find your machine's LAN IP address:
+   ```bash
+   # Windows
+   ipconfig
+   # Look for "IPv4 Address" (e.g., 192.168.1.100)
+   
+   # Mac/Linux
+   ifconfig
+   # Look for "inet" under en0 or wlan0 (e.g., 192.168.1.100)
+   ```
+
+2. Create a `.env` file in the project root:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Add your LAN IP to `.env`:
+   ```env
+   EXPO_PUBLIC_LAN_IP=192.168.1.100
+   ```
+
+4. Restart Expo server:
+   ```bash
+   npm start
+   ```
+
+#### For Production:
+
+Set the full API URL in `.env`:
+```env
+EXPO_PUBLIC_API_BASE_URL=https://your-backend.vercel.app
 ```
+
+This overrides all platform-specific logic.
 
 ## Running the App
 

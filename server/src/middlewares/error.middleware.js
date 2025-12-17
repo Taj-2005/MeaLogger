@@ -2,11 +2,23 @@ const logger = require('../utils/logger');
 const config = require('../config');
 
 const errorHandler = (err, req, res, next) => {
+  // Check if response was already sent
+  if (res.headersSent) {
+    logger.error('Error after response sent:', {
+      message: err.message,
+      url: req.url,
+      method: req.method,
+    });
+    return next(err);
+  }
+
   logger.error('Error:', {
     message: err.message,
     stack: err.stack,
     url: req.url,
     method: req.method,
+    contentType: req.headers['content-type'],
+    bodySize: req.body ? JSON.stringify(req.body).length : 0,
   });
 
   if (err.name === 'ValidationError') {

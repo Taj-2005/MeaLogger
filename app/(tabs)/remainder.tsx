@@ -8,6 +8,7 @@ import {
     Alert,
     Platform,
     ScrollView,
+    Switch,
     Text,
     TextInput,
     TouchableOpacity,
@@ -159,10 +160,20 @@ export default function RemindersScreen() {
   const handleToggleReminder = async (reminder: Reminder) => {
     try {
       const newEnabledState = !reminder.enabled;
+      
+      // Optimistic update: update UI immediately
+      setReminders(prevReminders =>
+        prevReminders.map(r =>
+          r._id === reminder._id ? { ...r, enabled: newEnabledState } : r
+        )
+      );
+
+      // Update on server
       await api.updateReminder(reminder._id, {
         enabled: newEnabledState,
       });
 
+      // Update notifications
       if (newEnabledState) {
         await cancelReminderNotification(reminder._id);
         await scheduleReminderNotification(
@@ -175,8 +186,15 @@ export default function RemindersScreen() {
         await cancelReminderNotification(reminder._id);
       }
 
+      // Refresh to ensure sync with server
       await loadReminders(false);
     } catch (error: any) {
+      // Revert optimistic update on error
+      setReminders(prevReminders =>
+        prevReminders.map(r =>
+          r._id === reminder._id ? { ...r, enabled: reminder.enabled } : r
+        )
+      );
       Alert.alert('Error', error.message || 'Failed to update reminder.');
     }
   };
@@ -485,21 +503,16 @@ export default function RemindersScreen() {
                   </View>
                 </View>
                 <View className="flex-row items-center">
-                  <TouchableOpacity
-                    onPress={() => handleToggleReminder(reminder)}
-                    className="p-2 mr-2"
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name={
-                        reminder.enabled
-                          ? 'toggle'
-                          : 'toggle-outline'
-                      }
-                      size={24}
-                      color={reminder.enabled ? colors.success : colors.textSecondary}
-                    />
-                  </TouchableOpacity>
+                  <Switch
+                    value={reminder.enabled}
+                    onValueChange={() => handleToggleReminder(reminder)}
+                    trackColor={{
+                      false: colors.border,
+                      true: colors.success,
+                    }}
+                    thumbColor="#FFFFFF"
+                    style={{ marginRight: 12 }}
+                  />
                   <TouchableOpacity
                     onPress={() => handleDeleteReminder(reminder._id)}
                     className="p-2"

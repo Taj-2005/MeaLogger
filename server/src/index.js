@@ -24,8 +24,30 @@ mongoose
     process.exit(1);
   });
 
-const server = app.listen(config.port, () => {
-  logger.info(`Server running on port ${config.port} in ${config.nodeEnv} mode`);
+// Bind to 0.0.0.0 to allow connections from other devices on the network
+// This is required for mobile devices to connect via LAN IP
+const server = app.listen(config.port, '0.0.0.0', () => {
+  const os = require('os');
+  const networkInterfaces = os.networkInterfaces();
+  const addresses = [];
+  
+  // Get all IPv4 addresses
+  Object.keys(networkInterfaces).forEach((interfaceName) => {
+    networkInterfaces[interfaceName].forEach((iface) => {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        addresses.push(iface.address);
+      }
+    });
+  });
+  
+  logger.info(`Server running on http://localhost:${config.port}`);
+  if (addresses.length > 0) {
+    logger.info(`Server accessible from network at:`);
+    addresses.forEach((addr) => {
+      logger.info(`  http://${addr}:${config.port}`);
+    });
+    logger.info(`Use one of these IPs in EXPO_PUBLIC_LAN_IP for mobile devices`);
+  }
 });
 
 process.on('SIGTERM', () => {

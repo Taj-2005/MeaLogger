@@ -103,14 +103,27 @@ const validateMeal = [
       }
     }),
   (req, res, next) => {
-    if (!req.file && !req.body.imageUrl) {
-      return res.status(400).json({
+    try {
+      // Ensure body exists before checking imageUrl
+      if (!req.file && (!req.body || !req.body.imageUrl)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Image is required. Please provide imageUrl or upload an image file.',
+          errors: [{ msg: 'Image is required' }],
+        });
+      }
+      next();
+    } catch (error) {
+      const logger = require('../utils/logger');
+      logger.error('Error in validateMeal middleware:', {
+        error: error.message,
+        stack: error.stack,
+      });
+      return res.status(500).json({
         success: false,
-        message: 'Image is required. Please provide imageUrl or upload an image file.',
-        errors: [{ msg: 'Image is required' }],
+        message: 'Validation error occurred',
       });
     }
-    next();
   },
   handleValidationErrors,
 ];
