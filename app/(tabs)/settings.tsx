@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     Modal,
     Platform,
@@ -17,6 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
 import { checkNotificationPermissions, requestNotificationPermissions } from '../../utils/notifications';
+import LoadingScreen from '../components/LoadingScreen';
 import AppLogo from '../components/AppLogo';
 
 const SettingsScreen = () => {
@@ -162,14 +162,7 @@ const SettingsScreen = () => {
   };
 
   if (loading) {
-    return (
-      <View
-        className="flex-1 justify-center items-center"
-        style={{ backgroundColor: colors.background }}
-      >
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingScreen message="Loading settings..." variant="minimal" />;
   }
 
   return (

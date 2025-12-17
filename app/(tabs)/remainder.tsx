@@ -4,7 +4,6 @@ import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     Platform,
     ScrollView,
@@ -17,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
+import LoadingScreen from '../components/LoadingScreen';
 import {
     cancelReminderNotification,
     checkNotificationPermissions,
@@ -228,14 +228,7 @@ export default function RemindersScreen() {
   };
 
   if (loading) {
-    return (
-      <View
-        className="flex-1 justify-center items-center"
-        style={{ backgroundColor: colors.background }}
-      >
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingScreen message="Loading reminders..." variant="minimal" />;
   }
 
   return (

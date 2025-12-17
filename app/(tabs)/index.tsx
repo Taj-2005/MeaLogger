@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   View,
@@ -9,6 +8,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
+import LoadingScreen from '../components/LoadingScreen';
 import GreetingHeader from '../components/GreetingHeader';
 import MotivationBanner from '../components/MotivationBanner';
 import QuickActions from '../components/QuickActions';
@@ -128,14 +128,7 @@ export default function Dashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <View
-        className="flex-1 justify-center items-center"
-        style={{ backgroundColor: colors.background }}
-      >
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingScreen message="Loading your dashboard..." variant="minimal" />;
   }
 
   return (

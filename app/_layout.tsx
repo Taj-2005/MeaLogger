@@ -1,10 +1,10 @@
 import * as Notifications from 'expo-notifications';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { requestNotificationPermissions } from '../utils/notifications';
+import LoadingScreen from './components/LoadingScreen';
 import './global.css';
 
 Notifications.setNotificationHandler({
@@ -45,12 +45,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }, [isAuthenticated, isLoading, segments]);
 
   if (isLoading) {
-    return (
-      <View className='flex-1 justify-center items-center bg-gray-100'>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text className='mt-4 text-gray-600'>Loading...</Text>
-      </View>
-    );
+    return <LoadingScreen message="Loading..." variant="splash" />;
   }
 
   return children;

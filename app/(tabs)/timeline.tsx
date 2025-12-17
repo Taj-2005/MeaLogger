@@ -3,7 +3,6 @@ import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     Dimensions,
     FlatList,
@@ -18,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
+import LoadingScreen from '../components/LoadingScreen';
 import AppLogo from '../components/AppLogo';
 import MealCard from '../components/MealCard';
 import PrimaryButton from '../components/PrimaryButton';
@@ -176,14 +176,7 @@ export default function TimelineScreen() {
   );
 
   if (isLoading) {
-    return (
-      <View
-        className="flex-1 justify-center items-center"
-        style={{ backgroundColor: colors.background }}
-      >
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingScreen message="Loading meals..." variant="minimal" />;
   }
 
   return (
