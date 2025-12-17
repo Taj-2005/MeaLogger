@@ -1,16 +1,33 @@
-import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import AppLogo from '../components/AppLogo';
+import AnimatedInput from '../components/AnimatedInput';
+import AuthLoadingScreen from '../components/AuthLoadingScreen';
 import PrimaryButton from '../components/PrimaryButton';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login, isLoading: authLoading, isAuthenticated } = useAuth();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +46,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     setError('');
-    
+
     if (!email.trim()) {
       setError('Email is required');
       return;
@@ -58,198 +75,210 @@ export default function LoginScreen() {
     }
   };
 
-  if (authLoading) {
-    return (
-      <View
-        className="flex-1 justify-center items-center"
-        style={{ backgroundColor: colors.background }}
-      >
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+  // Full-screen loading state
+  if (authLoading || isLoading) {
+    return <AuthLoadingScreen message="Signing you in..." />;
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      className="flex-1"
-      style={{ backgroundColor: colors.background }}
-    >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Animated gradient background */}
+      <LinearGradient
+        colors={[
+          `${colors.primary}08`,
+          `${colors.accent}05`,
+          colors.background,
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardView}
       >
-        <View className="flex-1 justify-center px-6 py-12">
-          {/* Header */}
-          <View className="items-center mb-12">
-            <View
-              className="w-20 h-20 rounded-2xl items-center justify-center mb-6 overflow-hidden"
-              style={{ backgroundColor: `${colors.primary}15` }}
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: Math.max(insets.top, 40) },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            {/* Header */}
+            <Animated.View
+              entering={FadeInDown.delay(100).duration(600).easing(Easing.out(Easing.ease))}
+              style={styles.header}
             >
-              <AppLogo size={80} className="w-full h-full" />
-            </View>
-            <Text
-              className="text-3xl font-bold mb-2"
-              style={{ color: colors.textPrimary }}
-            >
-              Welcome Back
-            </Text>
-            <Text
-              className="text-base text-center"
-              style={{ color: colors.textSecondary }}
-            >
-              Sign in to continue tracking your meals
-            </Text>
-          </View>
-
-          {/* Form */}
-          <View className="mb-6">
-            {/* Email Input */}
-            <View className="mb-4">
               <Text
-                className="text-sm font-semibold mb-2"
-                style={{ color: colors.textPrimary }}
+                style={[styles.title, { color: colors.textPrimary }]}
               >
-                Email
+                Welcome Back
               </Text>
-              <View
-                className="flex-row items-center rounded-xl px-4 py-3.5"
-                style={{
-                  backgroundColor: colors.surface,
-                  borderWidth: 1,
-                  borderColor: error && email ? colors.error : colors.border,
-                }}
-              >
-                <Ionicons
-                  name="mail-outline"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={{ marginRight: 12 }}
-                />
-                <TextInput
-                  placeholder="Enter your email"
-                  placeholderTextColor={colors.textSecondary}
-                  value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    setError('');
-                  }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  autoCorrect={false}
-                  className="flex-1"
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: 16,
-                  }}
-                />
-              </View>
-            </View>
-
-            {/* Password Input */}
-            <View className="mb-6">
               <Text
-                className="text-sm font-semibold mb-2"
-                style={{ color: colors.textPrimary }}
+                style={[styles.subtitle, { color: colors.textSecondary }]}
               >
-                Password
+                Sign in to continue tracking your meals
               </Text>
-              <View
-                className="flex-row items-center rounded-xl px-4 py-3.5"
-                style={{
-                  backgroundColor: colors.surface,
-                  borderWidth: 1,
-                  borderColor: error && password ? colors.error : colors.border,
+            </Animated.View>
+
+            {/* Form */}
+            <View style={styles.form}>
+              <AnimatedInput
+                label="Email"
+                icon="mail-outline"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setError('');
                 }}
-              >
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={{ marginRight: 12 }}
-                />
-                <TextInput
-                  placeholder="Enter your password"
-                  placeholderTextColor={colors.textSecondary}
-                  value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    setError('');
-                  }}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoComplete="password"
-                  className="flex-1"
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: 16,
-                  }}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  className="ml-2"
-                  activeOpacity={0.7}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                autoCorrect={false}
+                error={!!error && !email.trim()}
+                delay={200}
+              />
+
+              <AnimatedInput
+                label="Password"
+                icon="lock-closed-outline"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setError('');
+                }}
+                secureTextEntry
+                showPasswordToggle
+                showPassword={showPassword}
+                onPasswordToggle={() => setShowPassword(!showPassword)}
+                autoCapitalize="none"
+                autoComplete="password"
+                error={!!error && !password.trim()}
+                delay={300}
+              />
+
+              {/* Error Message */}
+              {error && (
+                <Animated.View
+                  entering={FadeIn.duration(300)}
+                  exiting={FadeIn.duration(200)}
+                  style={[styles.errorContainer, { backgroundColor: `${colors.error}15` }]}
                 >
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-              </View>
+                  <Text style={[styles.errorText, { color: colors.error }]}>
+                    {error}
+                  </Text>
+                </Animated.View>
+              )}
+
+              {/* Login Button */}
+              <Animated.View
+                entering={FadeInUp.delay(400).duration(500).easing(Easing.out(Easing.ease))}
+                style={styles.buttonContainer}
+              >
+                <PrimaryButton
+                  title="Sign In"
+                  onPress={handleLogin}
+                  loading={isLoading}
+                  disabled={isLoading}
+                  size="lg"
+                />
+              </Animated.View>
             </View>
 
-            {/* Error Message */}
-            {error ? (
-              <View
-                className="rounded-xl px-4 py-3 mb-4 flex-row items-center"
-                style={{ backgroundColor: `${colors.error}15` }}
-              >
-                <Ionicons
-                  name="alert-circle"
-                  size={18}
-                  color={colors.error}
-                  style={{ marginRight: 8 }}
-                />
-                <Text
-                  className="text-sm flex-1"
-                  style={{ color: colors.error }}
-                >
-                  {error}
-                </Text>
-              </View>
-            ) : null}
-
-            {/* Login Button */}
-            <PrimaryButton
-              title="Sign In"
-              onPress={handleLogin}
-              loading={isLoading}
-              disabled={isLoading}
-              size="lg"
-            />
-          </View>
-
-          {/* Footer */}
-          <View className="items-center">
-            <Text
-              className="text-sm mb-4"
-              style={{ color: colors.textSecondary }}
+            {/* Footer */}
+            <Animated.View
+              entering={FadeInUp.delay(500).duration(500).easing(Easing.out(Easing.ease))}
+              style={styles.footer}
             >
-              Don't have an account?{' '}
-              <Link href="./signup">
-                <Text
-                  className="font-semibold"
-                  style={{ color: colors.primary }}
-                >
-                  Sign Up
-                </Text>
+              <Text
+                style={[styles.footerText, { color: colors.textSecondary }]}
+              >
+                Don't have an account?{' '}
+              </Text>
+              <Link href="./signup" asChild>
+                <Pressable>
+                  <Text
+                    style={[styles.footerLink, { color: colors.primary }]}
+                  >
+                    Sign Up
+                  </Text>
+                </Pressable>
               </Link>
-            </Text>
+            </Animated.View>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    maxWidth: 400,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  header: {
+    marginBottom: 48,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 36,
+    fontWeight: '800',
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  form: {
+    marginBottom: 32,
+  },
+  errorContainer: {
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  buttonContainer: {
+    marginTop: 8,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+  },
+  footerLink: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
