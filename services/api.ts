@@ -162,8 +162,9 @@ class ApiClient {
       try {
         const refreshToken = await this.getRefreshToken();
         if (!refreshToken) {
-          console.error('No refresh token available');
-          this.refreshAttempts = 0; // Reset on clear failure
+          console.log('No refresh token available - user needs to login');
+          await this.clearTokens(); // Ensure tokens are cleared
+          this.refreshAttempts = 0; // Reset attempts
           return false;
         }
 
@@ -494,8 +495,29 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Request failed' }));
-        throw new Error(error.message || `Request failed with status ${response.status}`);
+        let errorData: any;
+        try {
+          const text = await response.text();
+          errorData = text ? JSON.parse(text) : { message: 'Request failed' };
+        } catch {
+          errorData = { message: 'Request failed' };
+        }
+        
+        // Provide user-friendly error messages based on status code
+        let errorMessage = errorData.message || `Request failed with status ${response.status}`;
+        
+        if (response.status === 500) {
+          errorMessage = errorData.message || 'Server error. Please try again in a moment.';
+        } else if (response.status === 503) {
+          errorMessage = 'Service temporarily unavailable. Please try again later.';
+        } else if (response.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+        
+        const error = new Error(errorMessage);
+        (error as any).status = response.status;
+        (error as any).code = errorData.code;
+        throw error;
       }
 
       try {
@@ -559,6 +581,9 @@ class ApiClient {
   }
 
   async login(email: string, password: string) {
+    // Clear any existing tokens before attempting login
+    await this.clearTokens();
+    
     try {
       const result = await this.request<{
         user: { id: string; name: string; email: string; avatarUrl: string | null };
@@ -570,6 +595,7 @@ class ApiClient {
 
       if (result.success && result.data) {
         if (!result.data.tokens?.accessToken || !result.data.tokens?.refreshToken) {
+          await this.clearTokens();
           throw new Error('Login response missing tokens. Please try again.');
         }
         
@@ -580,6 +606,7 @@ class ApiClient {
         const savedRefreshToken = await this.getRefreshToken();
         
         if (!savedAccessToken || !savedRefreshToken) {
+          await this.clearTokens();
           throw new Error('Failed to save authentication tokens. Please try again.');
         }
         
@@ -589,13 +616,25 @@ class ApiClient {
         return result.data;
       }
 
+      // If login failed, clear tokens and throw error
+      await this.clearTokens();
       throw new Error(result.message || 'Login failed. Please try again.');
     } catch (error: unknown) {
+      // Ensure tokens are cleared on any error
+      await this.clearTokens();
+      
       // Enhance error message for network errors
       const errorMessage = error instanceof Error ? error.message : String(error);
+      
       if (errorMessage.includes('Network request failed') || errorMessage.includes('Failed to fetch')) {
         throw new Error('Network error. Please check your internet connection and try again.');
       }
+      
+      // Handle server errors (500) with user-friendly message
+      if (errorMessage.includes('500') || errorMessage.includes('Server')) {
+        throw new Error('Server error. Please try again in a moment. If the problem persists, contact support.');
+      }
+      
       throw error;
     }
   }

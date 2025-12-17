@@ -31,10 +31,22 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    // Only load data if user is authenticated
+    if (user) {
+      loadDashboardData();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   const loadDashboardData = async (showLoading = true) => {
+    // Don't load if user is not authenticated
+    if (!user) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     try {
       if (showLoading) setLoading(true);
 
@@ -67,8 +79,13 @@ export default function Dashboard() {
           remindersActive: remindersActive || false,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading dashboard:', error);
+      // If it's an authentication error, the ProtectedRoute should handle navigation
+      // But we'll still log it for debugging
+      if (error?.message?.includes('Session expired') || error?.message?.includes('401')) {
+        console.error('Authentication error in dashboard - user should be redirected to login');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

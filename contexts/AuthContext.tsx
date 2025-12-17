@@ -120,6 +120,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await AsyncStorage.multiRemove(['rememberMe', 'storedEmail']);
       }
     } catch (error: unknown) {
+      // Ensure user state is cleared on login failure
+      setUser(null);
       // Re-throw error so UI can display it
       throw error;
     } finally {
