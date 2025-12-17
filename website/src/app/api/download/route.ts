@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": "application/vnd.android.package-archive",
-        "Content-Disposition": 'attachment; filename="MealLogger.apk"',
+        "Content-Disposition": 'attachment; filename="Melo.apk"',
         "Content-Length": buffer.byteLength.toString(),
       },
     });

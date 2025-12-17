@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "meal-logger-app",
-    "slug": "meal-logger-app",
+    "name": "Melo",
+    "slug": "melo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
-    "scheme": "Meal Logger",
+    "scheme": "Melo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

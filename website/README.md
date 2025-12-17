@@ -1,6 +1,6 @@
-# MealLogger Website
+# Melo Website
 
-A stunning, professional product landing page for the MealLogger mobile app, built with Next.js 16, TypeScript, Tailwind CSS, and Framer Motion.
+A stunning, professional product landing page for the Melo mobile app, built with Next.js 16, TypeScript, Tailwind CSS, and Framer Motion.
 
 ## 🚀 Features
 
@@ -107,4 +107,4 @@ The easiest way to deploy is using [Vercel](https://vercel.com):
 
 ## 📄 License
 
-This project is part of the MealLogger application.
+This project is part of the Melo application.

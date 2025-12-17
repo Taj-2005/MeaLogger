@@ -72,7 +72,7 @@ export default function DownloadButton({
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement("a");
           link.href = url;
-          link.download = "MealLogger.apk";
+          link.download = "Melo.apk";
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);

@@ -265,7 +265,7 @@ const SettingsScreen = () => {
             />
             <SettingRow
               icon="information-circle-outline"
-              title="About MeaLogger"
+              title="About Melo"
               subtitle="App version and information"
               onPress={() => setShowAbout(true)}
               delay={50}
@@ -365,7 +365,7 @@ const SettingsScreen = () => {
                 <Text
                   style={[styles.modalAppName, { color: colors.textPrimary }]}
                 >
-                  MeaLogger
+                  Melo
                 </Text>
                 <View style={styles.modalVersionContainer}>
                   <Text
@@ -557,7 +557,7 @@ const SettingsScreen = () => {
                 <Text
                   style={[styles.modalCopyrightText, { color: colors.textSecondary }]}
                 >
-                  © 2025 MeaLogger. All rights reserved.
+                  © 2025 Melo. All rights reserved.
                 </Text>
               </Animated.View>
             </ScrollView>
