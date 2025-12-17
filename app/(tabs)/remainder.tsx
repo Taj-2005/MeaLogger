@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -24,10 +23,6 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
-import AnimatedInput from '../components/AnimatedInput';
-import AnimatedToggle from '../components/AnimatedToggle';
-import LoadingScreen from '../components/LoadingScreen';
-import PrimaryButton from '../components/PrimaryButton';
 import {
   cancelReminderNotification,
   checkNotificationPermissions,
@@ -35,6 +30,11 @@ import {
   rescheduleAllReminders,
   scheduleReminderNotification,
 } from '../../utils/notifications';
+import AnimatedInput from '../components/AnimatedInput';
+import AnimatedToggle from '../components/AnimatedToggle';
+import LoadingScreen from '../components/LoadingScreen';
+import MealTypePicker, { MEAL_TYPES } from '../components/MealTypePicker';
+import PrimaryButton from '../components/PrimaryButton';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -115,14 +115,12 @@ type Reminder = {
   enabled: boolean;
 };
 
-const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-
 export default function RemindersScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
   const [title, setTitle] = useState('');
-  const [mealType, setMealType] = useState(MEAL_TYPES[0]);
+  const [mealType, setMealType] = useState(MEAL_TYPES[0].value);
   const [time, setTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -181,7 +179,7 @@ export default function RemindersScreen() {
     try {
       const result = await api.createReminder({
         title,
-        mealType: mealType.toLowerCase(),
+        mealType: mealType.toLowerCase() as 'breakfast' | 'lunch' | 'dinner' | 'snack',
         hour: time.getHours(),
         minute: time.getMinutes(),
         enabled: true,
@@ -198,7 +196,7 @@ export default function RemindersScreen() {
           );
         }
         setTitle('');
-        setMealType(MEAL_TYPES[0]);
+        setMealType(MEAL_TYPES[0].value);
         setTime(new Date());
         await loadReminders(false);
       }
@@ -375,38 +373,10 @@ export default function RemindersScreen() {
             />
 
             {/* Meal Type Picker */}
-            <View style={styles.pickerContainer}>
-              <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
-                Meal Type
-              </Text>
-              <View
-                style={[
-                  styles.pickerWrapper,
-                  {
-                    backgroundColor: colors.background,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <Picker
-                  selectedValue={mealType}
-                  onValueChange={setMealType}
-                  style={{
-                    color: colors.textPrimary,
-                    backgroundColor: 'transparent',
-                  }}
-                >
-                  {MEAL_TYPES.map((type) => (
-                    <Picker.Item
-                      key={type}
-                      label={type}
-                      value={type}
-                      color={colors.textPrimary}
-                    />
-                  ))}
-                </Picker>
-              </View>
-            </View>
+            <MealTypePicker
+              value={mealType}
+              onValueChange={setMealType}
+            />
 
             {/* Time Picker */}
             <TimePickerButton
