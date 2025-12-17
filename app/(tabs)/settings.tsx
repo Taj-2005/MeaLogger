@@ -35,7 +35,6 @@ import SettingRow from '../components/SettingRow';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-// Modal Close Button Component
 const ModalCloseButton: React.FC<{ onPress: () => void; colors: any }> = ({
   onPress,
   colors,
@@ -174,7 +173,6 @@ const SettingsScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <Animated.View
         entering={FadeInDown.duration(400).springify()}
         style={[
@@ -201,7 +199,6 @@ const SettingsScreen = () => {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Account Section */}
         <Animated.View
           entering={FadeInDown.delay(100).duration(400).springify()}
           style={styles.section}
@@ -245,7 +242,6 @@ const SettingsScreen = () => {
         </View>
         </Animated.View>
 
-        {/* Support Section */}
         <Animated.View
           entering={FadeInDown.delay(200).duration(400).springify()}
           style={styles.section}
@@ -273,7 +269,6 @@ const SettingsScreen = () => {
         </View>
         </Animated.View>
 
-        {/* Logout Section */}
         <Animated.View
           entering={FadeInDown.delay(300).duration(400).springify()}
           style={styles.section}
@@ -292,7 +287,6 @@ const SettingsScreen = () => {
         </Animated.View>
       </ScrollView>
 
-      {/* About Modal */}
       <Modal
         visible={showAbout}
         transparent={true}
@@ -322,7 +316,6 @@ const SettingsScreen = () => {
               style={styles.modalGradientHeader}
             />
 
-            {/* Modal Header */}
             <Animated.View
               entering={FadeInDown.delay(100).duration(400).springify()}
               style={styles.modalHeader}
@@ -343,7 +336,6 @@ const SettingsScreen = () => {
               contentContainerStyle={styles.modalScrollContent}
               showsVerticalScrollIndicator={false}
             >
-              {/* App Logo/Icon */}
               <Animated.View
                 entering={FadeInDown.delay(150)
                   .duration(500)
@@ -376,7 +368,6 @@ const SettingsScreen = () => {
               </View>
               </Animated.View>
 
-              {/* Description */}
               <Animated.View
                 entering={FadeInDown.delay(200)
                   .duration(500)
@@ -394,7 +385,6 @@ const SettingsScreen = () => {
                 </Text>
               </Animated.View>
 
-              {/* Features */}
               <Animated.View
                 entering={FadeInDown.delay(250)
                   .duration(500)
@@ -456,7 +446,6 @@ const SettingsScreen = () => {
                 </View>
               </Animated.View>
 
-              {/* Tech Stack */}
               <Animated.View
                 entering={FadeInDown.delay(600)
                   .duration(500)
@@ -493,7 +482,6 @@ const SettingsScreen = () => {
               </View>
               </Animated.View>
 
-              {/* Contact */}
               <Animated.View
                 entering={FadeInDown.delay(650)
                   .duration(500)
@@ -541,7 +529,6 @@ const SettingsScreen = () => {
                 </View>
               </Animated.View>
 
-              {/* Footer */}
               <Animated.View
                 entering={FadeInDown.delay(700)
                   .duration(500)

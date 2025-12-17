@@ -28,7 +28,6 @@ interface TodayMealsPreviewProps {
   onViewAll?: () => void;
 }
 
-// Separate component for meal card to allow hooks
 const MealPreviewCard = ({
   meal,
   index,
@@ -84,7 +83,6 @@ const MealPreviewCard = ({
           hour12: true,
         });
       } catch {
-        // Fallback
       }
     }
     const date = new Date(dateString);

@@ -31,13 +31,11 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   const rotation = useSharedValue(0);
 
   useEffect(() => {
-    // Fade in container
     opacity.value = withTiming(1, {
       duration: 400,
       easing: Easing.out(Easing.ease),
     });
 
-    // Logo entrance
     logoOpacity.value = withTiming(1, {
       duration: 600,
       easing: Easing.out(Easing.ease),
@@ -47,7 +45,6 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
       easing: Easing.out(Easing.ease),
     });
 
-    // Continuous pulse animation
     pulseScale.value = withRepeat(
       withSequence(
         withTiming(1.15, {
@@ -63,7 +60,6 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
       false
     );
 
-    // Subtle rotation (very slow)
     rotation.value = withRepeat(
       withTiming(360, {
         duration: 8000,
@@ -81,7 +77,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   const logoStyle = useAnimatedStyle(() => ({
     transform: [
       { scale: logoScale.value * pulseScale.value },
-      { rotate: `${rotation.value * 0.1}deg` }, // Very subtle rotation
+      { rotate: `${rotation.value * 0.1}deg` },
     ],
     opacity: logoOpacity.value,
   }));
@@ -120,7 +116,6 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Decorative background shapes */}
       <Animated.View
         style={[
           styles.decorativeCircle,
@@ -145,7 +140,6 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
       />
 
       <View style={styles.content}>
-        {/* Logo with pulse ring */}
         <View style={styles.logoWrapper}>
           <Animated.View style={[styles.pulseRing, pulseRingStyle]} />
           <Animated.View style={[styles.logoContainer, logoStyle]}>
@@ -163,12 +157,10 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
           </Animated.View>
         </View>
 
-        {/* Loader */}
         <View style={styles.loaderContainer}>
           <AnimatedLoader colors={colors} />
         </View>
 
-        {/* Message */}
         {message && (
           <Text style={[styles.message, { color: colors.textSecondary }]}>
             {message}
@@ -179,7 +171,6 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   );
 };
 
-// Animated loader component
 const AnimatedLoader: React.FC<{ colors: any }> = ({ colors }) => {
   const dot1 = useSharedValue(0);
   const dot2 = useSharedValue(0);
@@ -203,7 +194,6 @@ const AnimatedLoader: React.FC<{ colors: any }> = ({ colors }) => {
       );
     };
 
-    // Stagger the animations
     setTimeout(() => animateDot(dot1, 0), 0);
     setTimeout(() => animateDot(dot2, 0), 200);
     setTimeout(() => animateDot(dot3, 0), 400);

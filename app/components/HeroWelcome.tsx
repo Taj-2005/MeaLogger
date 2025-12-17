@@ -26,7 +26,6 @@ export default function HeroWelcome({ streak, todayMeals }: HeroWelcomeProps) {
   const rotate = useSharedValue(0);
 
   useEffect(() => {
-    // Waving animation: rotate from -15deg to 15deg repeatedly
     rotate.value = withRepeat(
       withTiming(30, {
         duration: 500,

@@ -34,7 +34,6 @@ import TimePickerButton from '../components/TimePickerButton';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-// Date Picker Button Component
 const DatePickerButton: React.FC<{
   date: string;
   onPress: () => void;
@@ -60,7 +59,6 @@ const DatePickerButton: React.FC<{
     });
   };
 
-  // Format date for display
   const formatDate = (dateString: string) => {
     try {
       const dateObj = new Date(dateString);
@@ -128,7 +126,6 @@ export default function MealLoggingScreen() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [time, setTime] = useState<Date>(() => {
-    // Default time for breakfast (8:00 AM)
     const defaultTime = new Date();
     defaultTime.setHours(8, 0, 0, 0);
     return defaultTime;
@@ -140,29 +137,27 @@ export default function MealLoggingScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Get default time based on meal type
   const getDefaultTime = (type: string): Date => {
     const defaultTime = new Date();
     switch (type) {
       case 'breakfast':
-        defaultTime.setHours(8, 0, 0, 0); // 8:00 AM
+        defaultTime.setHours(8, 0, 0, 0);
         break;
       case 'lunch':
-        defaultTime.setHours(13, 0, 0, 0); // 1:00 PM
+        defaultTime.setHours(13, 0, 0, 0);
         break;
       case 'snack':
-        defaultTime.setHours(17, 0, 0, 0); // 5:00 PM
+        defaultTime.setHours(17, 0, 0, 0);
         break;
       case 'dinner':
-        defaultTime.setHours(20, 30, 0, 0); // 8:30 PM
+        defaultTime.setHours(20, 30, 0, 0);
         break;
       default:
-        defaultTime.setHours(12, 0, 0, 0); // 12:00 PM
+        defaultTime.setHours(12, 0, 0, 0);
     }
     return defaultTime;
   };
 
-  // Handle meal type change - update time only if not manually changed
   const handleMealTypeChange = (newType: string) => {
     setMealType(newType);
     if (!timeManuallyChanged) {
@@ -170,7 +165,6 @@ export default function MealLoggingScreen() {
     }
   };
 
-  // Handle time change
   const handleTimeChange = (event: any, selectedTime?: Date) => {
     setShowTimePicker(Platform.OS === 'ios');
     if (selectedTime) {
@@ -214,11 +208,9 @@ export default function MealLoggingScreen() {
     setIsLoading(true);
 
     try {
-      // Combine date and time into a single Date object
       const dateTime = new Date(date);
       dateTime.setHours(time.getHours(), time.getMinutes(), time.getSeconds(), 0);
 
-      // Create time string using the same date to avoid timezone issues
       const timeDate = new Date(date);
       timeDate.setHours(time.getHours(), time.getMinutes(), time.getSeconds(), 0);
 
@@ -242,7 +234,6 @@ export default function MealLoggingScreen() {
         setCalories('');
         setCapturedImage(null);
         
-        // Navigate to timeline
         router.push('./timeline');
       } else {
         throw new Error(result.message || 'Failed to save meal');
@@ -257,7 +248,6 @@ export default function MealLoggingScreen() {
     }
   };
 
-  // Image container animation
   const imageScale = useSharedValue(1);
   const imageAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: imageScale.value }],
@@ -282,7 +272,6 @@ export default function MealLoggingScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[styles.container, { backgroundColor: colors.background }]}
       >
-      {/* Header with Gradient */}
       <Animated.View
         entering={FadeInDown.duration(400).springify()}
         style={[
@@ -290,6 +279,7 @@ export default function MealLoggingScreen() {
           {
             paddingTop: insets.top + 16,
             backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
           },
         ]}
       >
@@ -324,7 +314,6 @@ export default function MealLoggingScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Photo Upload Section */}
         <Animated.View
           entering={FadeInUp.delay(100).duration(500).easing(Easing.out(Easing.ease)).springify()}
           style={styles.section}
@@ -342,6 +331,7 @@ export default function MealLoggingScreen() {
                 {
                 backgroundColor: colors.surface,
                 borderColor: capturedImage ? colors.primary : colors.border,
+                shadowColor: colors.shadow,
                 },
               ]}
             >
@@ -355,15 +345,15 @@ export default function MealLoggingScreen() {
                     style={styles.image}
                   resizeMode="cover"
                 />
-                  <View style={[styles.imageOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.2)' }]}>
+                  <View style={[styles.imageOverlay, { backgroundColor: colors.shadow + '33' }]}>
                     <View
                       style={[
                         styles.imageEditBadge,
                         { backgroundColor: `${colors.primary}E6` },
                       ]}
                     >
-                      <Ionicons name="camera" size={20} color="#FFFFFF" />
-                      <Text style={styles.imageEditText}>Change Photo</Text>
+                      <Ionicons name="camera" size={20} color={colors.surface} />
+                      <Text style={[styles.imageEditText, { color: colors.surface }]}>Change Photo</Text>
                     </View>
                   </View>
                 </Animated.View>
@@ -393,7 +383,6 @@ export default function MealLoggingScreen() {
           </AnimatedPressable>
         </Animated.View>
 
-        {/* Meal Details Section */}
         <Animated.View
           entering={FadeInDown.delay(200).duration(400).springify()}
           style={styles.section}
@@ -401,7 +390,7 @@ export default function MealLoggingScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             Meal Details
             </Text>
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
             <AnimatedInput
               label="Meal Title"
               icon="restaurant-outline"
@@ -415,13 +404,11 @@ export default function MealLoggingScreen() {
               delay={0}
               />
 
-          {/* Meal Type Picker */}
             <MealTypePicker
               value={mealType}
               onValueChange={handleMealTypeChange}
             />
 
-            {/* Time Picker */}
             <TimePickerButton
               time={time}
               onPress={() => setShowTimePicker(true)}
@@ -438,7 +425,6 @@ export default function MealLoggingScreen() {
                 />
             )}
 
-            {/* Date Picker */}
             <DatePickerButton
               date={date}
               onPress={() => setShowDatePicker(true)}
@@ -460,7 +446,6 @@ export default function MealLoggingScreen() {
               />
             )}
 
-          {/* Calories Input */}
             <AnimatedInput
               label="Calories (Optional)"
               icon="flame-outline"
@@ -474,7 +459,6 @@ export default function MealLoggingScreen() {
               delay={100}
               />
 
-          {/* Error Message */}
           {error ? (
               <Animated.View
                 entering={FadeInDown.duration(300)}
@@ -494,7 +478,6 @@ export default function MealLoggingScreen() {
             </View>
         </Animated.View>
 
-          {/* Save Button */}
         <Animated.View
           entering={FadeInDown.delay(300).duration(400).springify()}
           style={styles.saveButtonContainer}
@@ -521,7 +504,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
     overflow: 'hidden',
   },
   headerContent: {
@@ -563,7 +545,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderStyle: 'dashed',
     overflow: 'hidden',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -592,7 +573,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   imageEditText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -625,7 +605,6 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 20,
     padding: 20,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,

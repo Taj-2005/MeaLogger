@@ -82,7 +82,6 @@ const MealGridCard = ({
           hour12: true,
         });
       } catch {
-        // Fallback
       }
     }
     const date = new Date(dateString);
@@ -93,7 +92,7 @@ const MealGridCard = ({
     });
   };
 
-  const cardWidth = (width - 60) / 2; // 20px padding on each side + 20px gap
+  const cardWidth = (width - 60) / 2;
 
   return (
     <Animated.View

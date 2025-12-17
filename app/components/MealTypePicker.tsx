@@ -48,7 +48,6 @@ const MealTypePicker: React.FC<MealTypePickerProps> = ({
 
   const selectedMealType = MEAL_TYPES.find((type) => type.value === value) || MEAL_TYPES[0];
 
-  // Animation values
   const scale = useSharedValue(1);
   const modalOpacity = useSharedValue(0);
   const modalTranslateY = useSharedValue(300);
@@ -173,10 +172,8 @@ const MealTypePicker: React.FC<MealTypePickerProps> = ({
                 },
               ]}
             >
-              {/* Handle */}
               <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
-              {/* Header */}
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
                   Select Meal Type
@@ -189,7 +186,6 @@ const MealTypePicker: React.FC<MealTypePickerProps> = ({
                 </TouchableOpacity>
               </View>
 
-              {/* Options */}
               <View style={styles.optionsContainer}>
                 {MEAL_TYPES.map((mealType, index) => {
                   const isSelected = mealType.value === value;

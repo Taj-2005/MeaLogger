@@ -72,7 +72,6 @@ export default function MealCard({
   };
 
   const formatTime = (dateString: string, timeString?: string) => {
-    // If time is provided separately, use it; otherwise use date's time
     if (timeString) {
       try {
         const timeDate = new Date(timeString);
@@ -82,7 +81,6 @@ export default function MealCard({
           hour12: true,
         });
       } catch {
-        // Fallback to date's time if time parsing fails
       }
     }
     const date = new Date(dateString);
@@ -149,7 +147,6 @@ export default function MealCard({
             },
           ]}
         >
-          {/* Image Thumbnail */}
           <View style={styles.imageContainer}>
         <Image
           source={{ uri: imageUrl }}
@@ -180,7 +177,6 @@ export default function MealCard({
             </View>
           </View>
 
-          {/* Content */}
           <View style={styles.content}>
             <View style={styles.header}>
               <View style={styles.titleContainer}>

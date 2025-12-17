@@ -83,7 +83,7 @@ export default function QuickActionsGrid() {
       });
     };
 
-    const cardWidth = (width - 60) / 2; // 20px padding + 20px gap
+    const cardWidth = (width - 60) / 2;
 
     return (
       <Animated.View

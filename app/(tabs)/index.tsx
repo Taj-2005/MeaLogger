@@ -33,7 +33,6 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    // Only load data if user is authenticated
     if (user) {
     loadDashboardData();
     } else {
@@ -42,7 +41,6 @@ export default function Dashboard() {
   }, [user]);
 
   const loadDashboardData = async (showLoading = true) => {
-    // Don't load if user is not authenticated
     if (!user) {
       setLoading(false);
       setRefreshing(false);
@@ -83,8 +81,6 @@ export default function Dashboard() {
       }
     } catch (error: any) {
       console.error('Error loading dashboard:', error);
-      // If it's an authentication error, the ProtectedRoute should handle navigation
-      // But we'll still log it for debugging
       if (error?.message?.includes('Session expired') || error?.message?.includes('401')) {
         console.error('Authentication error in dashboard - user should be redirected to login');
       }
@@ -131,7 +127,6 @@ export default function Dashboard() {
 
   const insets = useSafeAreaInsets();
 
-  // Get today's meals for preview
   const todayMeals = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     return meals
@@ -140,7 +135,6 @@ export default function Dashboard() {
         return mealDate === today;
       })
       .sort((a: any, b: any) => {
-        // Sort by time (most recent first)
         const timeA = a.time ? new Date(a.time).getTime() : new Date(a.date).getTime();
         const timeB = b.time ? new Date(b.time).getTime() : new Date(b.date).getTime();
         return timeB - timeA;

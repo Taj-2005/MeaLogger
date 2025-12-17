@@ -112,7 +112,6 @@ export default function Profile() {
         .substring(0, 2)
     : 'U';
 
-  // Avatar animation
   const avatarScale = useSharedValue(1);
   const avatarAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: avatarScale.value }],
@@ -144,7 +143,6 @@ export default function Profile() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      {/* Header with Gradient */}
       <Animated.View
         entering={FadeInDown.duration(400).springify()}
         style={[
@@ -193,7 +191,6 @@ export default function Profile() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Header Card */}
         <Animated.View
           entering={FadeInUp.delay(100).duration(500).easing(Easing.out(Easing.ease)).springify()}
           style={[styles.profileHeaderCard, { backgroundColor: colors.surface }]}
@@ -209,7 +206,6 @@ export default function Profile() {
             style={styles.profileGradient}
           />
 
-          {/* Avatar */}
           <Animated.View style={avatarAnimatedStyle}>
             <AnimatedPressable
               onPress={handleAvatarPress}
@@ -252,7 +248,6 @@ export default function Profile() {
             </AnimatedPressable>
           </Animated.View>
 
-          {/* User Info */}
           <Animated.View
             entering={FadeInDown.delay(150).duration(400).springify()}
             style={styles.userInfo}
@@ -266,7 +261,6 @@ export default function Profile() {
           </Animated.View>
         </Animated.View>
 
-        {/* Profile Information Section */}
         <Animated.View
           entering={FadeInDown.delay(200).duration(400).springify()}
           style={styles.section}
@@ -290,7 +284,6 @@ export default function Profile() {
               delay={0}
               />
 
-            {/* Email (Read-only) */}
             <View style={styles.emailContainer}>
               <AnimatedInput
                 label="Email"
@@ -304,7 +297,6 @@ export default function Profile() {
             </Text>
           </View>
 
-          {/* Status Messages */}
           {error ? (
               <Animated.View
                 entering={FadeInDown.duration(300)}
@@ -339,7 +331,6 @@ export default function Profile() {
               </Animated.View>
           ) : null}
 
-          {/* Update Button */}
             <View style={styles.updateButtonContainer}>
           <PrimaryButton
             title="Update Profile"

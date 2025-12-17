@@ -42,7 +42,6 @@ const TimePickerButton: React.FC<TimePickerButtonProps> = ({
     });
   };
 
-  // Format time for display (e.g., "8:30 AM")
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
