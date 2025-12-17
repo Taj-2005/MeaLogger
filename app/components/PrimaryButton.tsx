@@ -1,6 +1,13 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, ViewStyle } from 'react-native';
+import { Text, ActivityIndicator, ViewStyle, Pressable } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface PrimaryButtonProps {
   title: string;
@@ -62,18 +69,43 @@ export default function PrimaryButton({
 
   const backgroundColor = getVariantColor();
   const isDisabled = disabled || loading;
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    if (!isDisabled) {
+      scale.value = withSpring(0.96, {
+        damping: 15,
+        stiffness: 300,
+      });
+    }
+  };
+
+  const handlePressOut = () => {
+    if (!isDisabled) {
+      scale.value = withSpring(1, {
+        damping: 15,
+        stiffness: 300,
+      });
+    }
+  };
 
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={isDisabled}
-      activeOpacity={0.8}
       className={`rounded-xl ${getSizeClasses()} items-center justify-center ${className}`}
       style={[
         {
           backgroundColor: isDisabled ? colors.border : backgroundColor,
           opacity: isDisabled ? 0.6 : 1,
         },
+        animatedStyle,
         style,
       ]}
     >
@@ -86,7 +118,7 @@ export default function PrimaryButton({
           {title}
         </Text>
       )}
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 

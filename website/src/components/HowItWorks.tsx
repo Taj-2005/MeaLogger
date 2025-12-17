@@ -21,14 +21,6 @@ const steps = [
   },
   {
     number: "02",
-    icon: Clock,
-    title: "Auto-Log with Timestamp",
-    description:
-      "The app automatically saves your meal with the current time and date. Everything is organized chronologically.",
-    color: "from-purple-500 to-pink-500",
-  },
-  {
-    number: "03",
     icon: Calendar,
     title: "View Your Timeline",
     description:
@@ -36,7 +28,7 @@ const steps = [
     color: "from-green-500 to-emerald-500",
   },
   {
-    number: "04",
+    number: "03",
     icon: Bell,
     title: "Set Smart Reminders",
     description:
@@ -44,7 +36,7 @@ const steps = [
     color: "from-orange-500 to-red-500",
   },
   {
-    number: "05",
+    number: "04",
     icon: Trophy,
     title: "Track Your Streaks",
     description:
