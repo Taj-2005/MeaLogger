@@ -23,6 +23,11 @@ const mealSchema = new mongoose.Schema(
       required: [true, 'Date is required'],
       index: true,
     },
+    time: {
+      type: String,
+      default: null,
+      // Store time as ISO string or HH:MM format for flexibility
+    },
     calories: {
       type: Number,
       min: 0,

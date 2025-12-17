@@ -15,6 +15,7 @@ interface MealCardProps {
   title: string;
   type: string;
   date: string;
+  time?: string;
   calories?: number;
   imageUrl: string;
   onPress?: () => void;
@@ -26,6 +27,7 @@ export default function MealCard({
   title,
   type,
   date,
+  time,
   calories,
   imageUrl,
   onPress,
@@ -69,7 +71,20 @@ export default function MealCard({
     }
   };
 
-  const formatTime = (dateString: string) => {
+  const formatTime = (dateString: string, timeString?: string) => {
+    // If time is provided separately, use it; otherwise use date's time
+    if (timeString) {
+      try {
+        const timeDate = new Date(timeString);
+        return timeDate.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        });
+      } catch {
+        // Fallback to date's time if time parsing fails
+      }
+    }
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -231,7 +246,7 @@ export default function MealCard({
                   <Text
                     style={[styles.dateTime, { color: colors.textSecondary }]}
                   >
-                    {formatTime(date)}
+                    {formatTime(date, time)}
                   </Text>
                 </View>
               </View>

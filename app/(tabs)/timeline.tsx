@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -23,8 +23,7 @@ import Animated, {
   FadeInUp,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
-  withTiming,
+  withSpring
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -42,6 +41,7 @@ type Meal = {
   imageUrl: string;
   createdAt: string;
   date: string;
+  time?: string;
   title: string;
   type: string;
   calories?: number;
@@ -90,6 +90,7 @@ export default function TimelineScreen() {
           title: meal.title,
           type: meal.type,
           date: meal.date,
+          time: meal.time,
           calories: meal.calories,
           imageUrl: meal.imageUrl,
           createdAt: meal.createdAt,
@@ -245,15 +246,16 @@ export default function TimelineScreen() {
 
   const renderMealItem = ({ item, index }: { item: Meal; index: number }) => (
     <MealCard
-      title={item.title}
-      type={item.type}
-      date={item.date}
-      calories={item.calories}
-      imageUrl={item.imageUrl}
-      onPress={() => openImageModal(item.imageUrl)}
-      onDelete={() => handleDeleteMeal(item)}
-      delay={index * 30}
-    />
+              title={item.title}
+              type={item.type}
+              date={item.date}
+              time={item.time}
+              calories={item.calories}
+              imageUrl={item.imageUrl}
+              onPress={() => openImageModal(item.imageUrl)}
+              onDelete={() => handleDeleteMeal(item)}
+              delay={index * 30}
+            />
   );
 
   const renderDateSection = ({ item }: { item: GroupedMeals }) => {
@@ -312,6 +314,7 @@ export default function TimelineScreen() {
               title={meal.title}
               type={meal.type}
               date={meal.date}
+              time={meal.time}
               calories={meal.calories}
               imageUrl={meal.imageUrl}
               onPress={() => openImageModal(meal.imageUrl)}

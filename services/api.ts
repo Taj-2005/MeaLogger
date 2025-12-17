@@ -662,6 +662,7 @@ class ApiClient {
     title: string;
     type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
     date: string;
+    time?: string;
     calories?: number;
     imageUri: string;
   }) {
@@ -876,6 +877,7 @@ class ApiClient {
         title: mealData.title,
         type: mealData.type,
         date: new Date(mealData.date).toISOString(),
+        time: mealData.time,
         calories: mealData.calories,
         imageUrl: cloudinaryResult.secure_url,
       };

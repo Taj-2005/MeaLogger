@@ -19,7 +19,7 @@ const createMeal = async (req, res) => {
       });
     }
 
-    const { title, type, date, calories, imageUrl } = req.body;
+    const { title, type, date, time, calories, imageUrl } = req.body;
 
     logger.info('Create meal request', {
       hasFile: !!req.file,
@@ -28,6 +28,7 @@ const createMeal = async (req, res) => {
       title,
       type,
       date,
+      time,
       calories,
       hasImageUrl: !!imageUrl,
       imageUrlLength: imageUrl?.length,
@@ -103,6 +104,22 @@ const createMeal = async (req, res) => {
       parsedDate = new Date();
     }
 
+    // Handle time - if provided, combine with date; otherwise use date's time
+    let parsedTime = null;
+    if (time) {
+      try {
+        const timeDate = new Date(time);
+        if (!isNaN(timeDate.getTime())) {
+          // Extract time portion and combine with date
+          parsedDate.setHours(timeDate.getHours(), timeDate.getMinutes(), timeDate.getSeconds(), 0);
+          // Store time as ISO string for consistency
+          parsedTime = timeDate.toISOString();
+        }
+      } catch (error) {
+        logger.warn('Invalid time format, using date time', { time, error: error.message });
+      }
+    }
+
     // Validate required fields before creating meal
     if (!title || !type || !finalImageUrl) {
       logger.warn('Create meal: Missing required fields', {
@@ -122,6 +139,7 @@ const createMeal = async (req, res) => {
       title: title.trim(),
       type,
       date: parsedDate,
+      time: parsedTime,
       calories: calories && calories !== '' && calories !== null && calories !== undefined 
         ? parseInt(calories, 10) 
         : null,
@@ -163,6 +181,7 @@ const createMeal = async (req, res) => {
           title: meal.title,
           type: meal.type,
           date: meal.date,
+          time: meal.time,
           calories: meal.calories,
           imageUrl: meal.imageUrl,
           createdAt: meal.createdAt,
@@ -299,7 +318,7 @@ const getMeal = async (req, res) => {
 
 const updateMeal = async (req, res) => {
   try {
-    const { title, type, date, calories, imageUrl } = req.body;
+    const { title, type, date, time, calories, imageUrl } = req.body;
 
     const meal = await Meal.findOne({
       _id: req.params.id,
@@ -336,7 +355,23 @@ const updateMeal = async (req, res) => {
 
     if (title) meal.title = title;
     if (type) meal.type = type;
-    if (date) meal.date = new Date(date);
+    if (date) {
+      const parsedDate = new Date(date);
+      meal.date = parsedDate;
+      // If time is also provided, combine with date
+      if (time) {
+        try {
+          const timeDate = new Date(time);
+          if (!isNaN(timeDate.getTime())) {
+            parsedDate.setHours(timeDate.getHours(), timeDate.getMinutes(), timeDate.getSeconds(), 0);
+            meal.date = parsedDate;
+            meal.time = timeDate.toISOString();
+          }
+        } catch (error) {
+          logger.warn('Invalid time format in update', { time, error: error.message });
+        }
+      }
+    }
     if (calories !== undefined) meal.calories = calories ? parseInt(calories) : null;
     meal.imageUrl = finalImageUrl;
     meal.cloudinaryPublicId = cloudinaryPublicId;
@@ -354,6 +389,7 @@ const updateMeal = async (req, res) => {
           title: meal.title,
           type: meal.type,
           date: meal.date,
+          time: meal.time,
           calories: meal.calories,
           imageUrl: meal.imageUrl,
           createdAt: meal.createdAt,

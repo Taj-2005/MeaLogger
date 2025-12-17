@@ -30,6 +30,7 @@ import { api } from '../../services/api';
 import AnimatedInput from '../components/AnimatedInput';
 import MealTypePicker from '../components/MealTypePicker';
 import PrimaryButton from '../components/PrimaryButton';
+import TimePickerButton from '../components/TimePickerButton';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -126,10 +127,57 @@ export default function MealLoggingScreen() {
   const [mealType, setMealType] = useState('breakfast');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [time, setTime] = useState<Date>(() => {
+    // Default time for breakfast (8:00 AM)
+    const defaultTime = new Date();
+    defaultTime.setHours(8, 0, 0, 0);
+    return defaultTime;
+  });
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [timeManuallyChanged, setTimeManuallyChanged] = useState(false);
   const [calories, setCalories] = useState('');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Get default time based on meal type
+  const getDefaultTime = (type: string): Date => {
+    const defaultTime = new Date();
+    switch (type) {
+      case 'breakfast':
+        defaultTime.setHours(8, 0, 0, 0); // 8:00 AM
+        break;
+      case 'lunch':
+        defaultTime.setHours(13, 0, 0, 0); // 1:00 PM
+        break;
+      case 'snack':
+        defaultTime.setHours(17, 0, 0, 0); // 5:00 PM
+        break;
+      case 'dinner':
+        defaultTime.setHours(20, 30, 0, 0); // 8:30 PM
+        break;
+      default:
+        defaultTime.setHours(12, 0, 0, 0); // 12:00 PM
+    }
+    return defaultTime;
+  };
+
+  // Handle meal type change - update time only if not manually changed
+  const handleMealTypeChange = (newType: string) => {
+    setMealType(newType);
+    if (!timeManuallyChanged) {
+      setTime(getDefaultTime(newType));
+    }
+  };
+
+  // Handle time change
+  const handleTimeChange = (event: any, selectedTime?: Date) => {
+    setShowTimePicker(Platform.OS === 'ios');
+    if (selectedTime) {
+      setTime(selectedTime);
+      setTimeManuallyChanged(true);
+    }
+  };
 
   const pickImage = async () => {
     try {
@@ -166,10 +214,19 @@ export default function MealLoggingScreen() {
     setIsLoading(true);
 
     try {
+      // Combine date and time into a single Date object
+      const dateTime = new Date(date);
+      dateTime.setHours(time.getHours(), time.getMinutes(), time.getSeconds(), 0);
+
+      // Create time string using the same date to avoid timezone issues
+      const timeDate = new Date(date);
+      timeDate.setHours(time.getHours(), time.getMinutes(), time.getSeconds(), 0);
+
       const result = await api.createMeal({
         title,
         type: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
-        date,
+        date: dateTime.toISOString(),
+        time: timeDate.toISOString(),
         calories: calories ? parseInt(calories) : undefined,
         imageUri: capturedImage,
       });
@@ -179,6 +236,9 @@ export default function MealLoggingScreen() {
         setTitle('');
         setMealType('breakfast');
         setDate(new Date().toISOString().split('T')[0]);
+        const defaultTime = getDefaultTime('breakfast');
+        setTime(defaultTime);
+        setTimeManuallyChanged(false);
         setCalories('');
         setCapturedImage(null);
 
@@ -358,8 +418,25 @@ export default function MealLoggingScreen() {
             {/* Meal Type Picker */}
             <MealTypePicker
               value={mealType}
-              onValueChange={setMealType}
+              onValueChange={handleMealTypeChange}
             />
+
+            {/* Time Picker */}
+            <TimePickerButton
+              time={time}
+              onPress={() => setShowTimePicker(true)}
+              label="Time"
+            />
+
+            {showTimePicker && (
+              <DateTimePicker
+                value={time}
+                mode="time"
+                is24Hour={false}
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleTimeChange}
+              />
+            )}
 
             {/* Date Picker */}
             <DatePickerButton
