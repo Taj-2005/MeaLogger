@@ -46,7 +46,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     setError('');
-
+    
     if (!email.trim()) {
       setError('Email is required');
       return;
@@ -94,50 +94,50 @@ export default function LoginScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
-      >
-        <ScrollView
+    >
+      <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
             { paddingTop: Math.max(insets.top, 40) },
           ]}
-          keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-        >
+      >
           <View style={styles.content}>
-            {/* Header */}
+          {/* Header */}
             <Animated.View
               entering={FadeInDown.delay(100).duration(600).easing(Easing.out(Easing.ease))}
               style={styles.header}
             >
-              <Text
+            <Text
                 style={[styles.title, { color: colors.textPrimary }]}
-              >
-                Welcome Back
-              </Text>
-              <Text
+            >
+              Welcome Back
+            </Text>
+            <Text
                 style={[styles.subtitle, { color: colors.textSecondary }]}
-              >
-                Sign in to continue tracking your meals
-              </Text>
+            >
+              Sign in to continue tracking your meals
+            </Text>
             </Animated.View>
 
-            {/* Form */}
+          {/* Form */}
             <View style={styles.form}>
               <AnimatedInput
                 label="Email"
                 icon="mail-outline"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setError('');
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                autoCorrect={false}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setError('');
+                  }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  autoCorrect={false}
                 error={!!error && !email.trim()}
                 delay={200}
               />
@@ -145,72 +145,72 @@ export default function LoginScreen() {
               <AnimatedInput
                 label="Password"
                 icon="lock-closed-outline"
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  setError('');
-                }}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setError('');
+                  }}
                 secureTextEntry
                 showPasswordToggle
                 showPassword={showPassword}
                 onPasswordToggle={() => setShowPassword(!showPassword)}
-                autoCapitalize="none"
-                autoComplete="password"
+                  autoCapitalize="none"
+                  autoComplete="password"
                 error={!!error && !password.trim()}
                 delay={300}
               />
 
-              {/* Error Message */}
+            {/* Error Message */}
               {error && (
                 <Animated.View
                   entering={FadeIn.duration(300)}
                   exiting={FadeIn.duration(200)}
                   style={[styles.errorContainer, { backgroundColor: `${colors.error}15` }]}
-                >
+              >
                   <Text style={[styles.errorText, { color: colors.error }]}>
-                    {error}
-                  </Text>
+                  {error}
+                </Text>
                 </Animated.View>
               )}
 
-              {/* Login Button */}
+            {/* Login Button */}
               <Animated.View
                 entering={FadeInUp.delay(400).duration(500).easing(Easing.out(Easing.ease))}
                 style={styles.buttonContainer}
               >
-                <PrimaryButton
-                  title="Sign In"
-                  onPress={handleLogin}
-                  loading={isLoading}
-                  disabled={isLoading}
-                  size="lg"
-                />
+            <PrimaryButton
+              title="Sign In"
+              onPress={handleLogin}
+              loading={isLoading}
+              disabled={isLoading}
+              size="lg"
+            />
               </Animated.View>
-            </View>
+          </View>
 
-            {/* Footer */}
+          {/* Footer */}
             <Animated.View
               entering={FadeInUp.delay(500).duration(500).easing(Easing.out(Easing.ease))}
               style={styles.footer}
             >
-              <Text
+            <Text
                 style={[styles.footerText, { color: colors.textSecondary }]}
-              >
-                Don't have an account?{' '}
+            >
+              Don't have an account?{' '}
               </Text>
               <Link href="./signup" asChild>
                 <Pressable>
-                  <Text
+                <Text
                     style={[styles.footerLink, { color: colors.primary }]}
-                  >
-                    Sign Up
-                  </Text>
+                >
+                  Sign Up
+                </Text>
                 </Pressable>
               </Link>
             </Animated.View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -49,18 +50,38 @@ export default function MotivationBanner({
   const message = getMessage();
 
   return (
-    <View
-      className="mx-5 mb-6 rounded-2xl px-5 py-4 flex-row items-center mt-4"
-      style={{ backgroundColor: message.bgColor }}
+    <Animated.View
+      entering={FadeInUp.delay(200).duration(400)}
+      style={[
+        styles.container,
+        { backgroundColor: message.bgColor },
+      ]}
     >
-      <Ionicons name={message.icon} size={24} color={message.iconColor} />
+      <Ionicons name={message.icon} size={26} color={message.iconColor} />
       <Text
-        className="text-sm font-semibold ml-3 flex-1 leading-snug"
-        style={{ color: colors.textPrimary }}
+        style={[styles.text, { color: colors.textPrimary }]}
       >
         {message.text}
       </Text>
-    </View>
+    </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 20,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  text: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginLeft: 12,
+    flex: 1,
+    lineHeight: 20,
+  },
+});
 

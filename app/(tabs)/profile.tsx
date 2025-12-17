@@ -4,13 +4,13 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
   Pressable,
-  ScrollView,
+    ScrollView,
   StyleSheet,
-  Text,
+    Text,
   View,
 } from 'react-native';
 import Animated, {
@@ -151,7 +151,7 @@ export default function Profile() {
           styles.header,
           {
             paddingTop: insets.top + 16,
-            backgroundColor: colors.surface,
+          backgroundColor: colors.surface,
           },
         ]}
       >
@@ -214,41 +214,41 @@ export default function Profile() {
             <AnimatedPressable
               onPress={handleAvatarPress}
               style={styles.avatarContainer}
-            >
-              {avatarUrl ? (
-                <View
+          >
+            {avatarUrl ? (
+              <View
                   style={[
                     styles.avatarImageWrapper,
                     { borderColor: colors.primary },
                   ]}
-                >
-                  <Image
-                    source={{ uri: avatarUrl }}
+              >
+                <Image
+                  source={{ uri: avatarUrl }}
                     style={styles.avatarImage}
-                    resizeMode="cover"
-                  />
-                </View>
-              ) : (
-                <View
+                  resizeMode="cover"
+                />
+              </View>
+            ) : (
+              <View
                   style={[
                     styles.avatarPlaceholder,
                     { backgroundColor: colors.primary },
                   ]}
-                >
+              >
                   <Text style={styles.avatarText}>{avatarText}</Text>
-                </View>
-              )}
-              <View
+              </View>
+            )}
+            <View
                 style={[
                   styles.avatarEditBadge,
                   {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.surface,
+                backgroundColor: colors.surface,
+                borderColor: colors.surface,
                   },
                 ]}
-              >
+            >
                 <Ionicons name="camera" size={18} color={colors.primary} />
-              </View>
+            </View>
             </AnimatedPressable>
           </Animated.View>
 
@@ -258,11 +258,11 @@ export default function Profile() {
             style={styles.userInfo}
           >
             <Text style={[styles.userName, { color: colors.textPrimary }]}>
-              {user?.name || 'Your Profile'}
-            </Text>
+            {user?.name || 'Your Profile'}
+          </Text>
             <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-              {user?.email || ''}
-            </Text>
+            {user?.email || ''}
+          </Text>
           </Animated.View>
         </Animated.View>
 
@@ -273,22 +273,22 @@ export default function Profile() {
         >
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             Profile Information
-          </Text>
+            </Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <AnimatedInput
               label="Full Name"
               icon="person-outline"
-              value={name}
-              onChangeText={(text) => {
-                setName(text);
-                setChanged(true);
-                setError('');
-                setSuccess('');
-              }}
-              placeholder="Enter your name"
+                value={name}
+                onChangeText={(text) => {
+                  setName(text);
+                  setChanged(true);
+                  setError('');
+                  setSuccess('');
+                }}
+                placeholder="Enter your name"
               error={!!error && !name}
               delay={0}
-            />
+              />
 
             {/* Email (Read-only) */}
             <View style={styles.emailContainer}>
@@ -300,55 +300,55 @@ export default function Profile() {
                 delay={50}
               />
               <Text style={[styles.emailHint, { color: colors.textSecondary }]}>
-                Email cannot be changed
-              </Text>
-            </View>
+              Email cannot be changed
+            </Text>
+          </View>
 
-            {/* Status Messages */}
-            {error ? (
+          {/* Status Messages */}
+          {error ? (
               <Animated.View
                 entering={FadeInDown.duration(300)}
                 style={[styles.messageContainer, { backgroundColor: `${colors.error}15` }]}
-              >
-                <Ionicons
-                  name="alert-circle"
-                  size={18}
-                  color={colors.error}
+            >
+              <Ionicons
+                name="alert-circle"
+                size={18}
+                color={colors.error}
                   style={styles.messageIcon}
-                />
+              />
                 <Text style={[styles.messageText, { color: colors.error }]}>
-                  {error}
-                </Text>
+                {error}
+              </Text>
               </Animated.View>
-            ) : null}
+          ) : null}
 
-            {success ? (
+          {success ? (
               <Animated.View
                 entering={FadeInDown.duration(300)}
                 style={[styles.messageContainer, { backgroundColor: `${colors.success}15` }]}
-              >
-                <Ionicons
-                  name="checkmark-circle"
-                  size={18}
-                  color={colors.success}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={18}
+                color={colors.success}
                   style={styles.messageIcon}
-                />
-                <Text style={[styles.messageText, { color: colors.success }]}>
-                  {success}
-                </Text>
-              </Animated.View>
-            ) : null}
-
-            {/* Update Button */}
-            <View style={styles.updateButtonContainer}>
-              <PrimaryButton
-                title="Update Profile"
-                onPress={handleUpdateProfile}
-                loading={loading}
-                disabled={!changed || loading}
-                variant="primary"
               />
-            </View>
+                <Text style={[styles.messageText, { color: colors.success }]}>
+                {success}
+              </Text>
+              </Animated.View>
+          ) : null}
+
+          {/* Update Button */}
+            <View style={styles.updateButtonContainer}>
+          <PrimaryButton
+            title="Update Profile"
+            onPress={handleUpdateProfile}
+            loading={loading}
+            disabled={!changed || loading}
+            variant="primary"
+          />
+        </View>
           </View>
         </Animated.View>
 

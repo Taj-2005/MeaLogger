@@ -1,7 +1,13 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
@@ -51,60 +57,135 @@ export default function TodaySummary({
   const totalGaps = 24;
   const cardWidth = (width - padding - totalGaps) / 3;
 
-  return (
-    <View className="px-5 mb-6">
-      <Text
-        className="text-lg font-semibold mb-4 tracking-tight"
-        style={{ color: colors.textPrimary }}
+  const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+  const StatCard = ({
+    stat,
+    index,
+  }: {
+    stat: (typeof stats)[0];
+    index: number;
+  }) => {
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
+
+    const handlePressIn = () => {
+      scale.value = withSpring(0.95, {
+        damping: 15,
+        stiffness: 400,
+      });
+    };
+
+    const handlePressOut = () => {
+      scale.value = withSpring(1, {
+        damping: 15,
+        stiffness: 400,
+      });
+    };
+
+    return (
+      <Animated.View
+        entering={FadeInDown.delay(150 + index * 50).duration(400).springify()}
+        style={{ width: cardWidth, marginRight: index < stats.length - 1 ? 12 : 0 }}
       >
-        Today at a Glance
-      </Text>
-      <View style={{ flexDirection: 'row' }}>
-        {stats.map((stat, index) => (
-          <TouchableOpacity
-            key={stat.id}
-            onPress={stat.onPress}
-            activeOpacity={0.7}
-            className="bg-white rounded-xl shadow-md"
-            style={{
-              width: cardWidth,
-              padding: 16,
-              shadowColor: colors.shadow,
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.08,
-              shadowRadius: 4,
-              elevation: 2,
-              marginRight: index < stats.length - 1 ? 12 : 0,
-            }}
+        <AnimatedPressable
+          onPress={stat.onPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={animatedStyle}
+        >
+          <View
+            style={[
+              styles.statCard,
+              {
+                backgroundColor: colors.surface,
+                shadowColor: colors.shadow,
+              },
+            ]}
           >
             <View
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: `${stat.color}15`,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 12,
-              }}
+              style={[
+                styles.iconContainer,
+                { backgroundColor: `${stat.color}15` },
+              ]}
             >
-              <Ionicons name={stat.icon} size={18} color={stat.color} />
+              <Ionicons name={stat.icon} size={20} color={stat.color} />
             </View>
             <Text
-              className="text-2xl font-bold tracking-tight mb-1"
-              style={{ color: colors.textPrimary }}
+              style={[styles.statValue, { color: colors.textPrimary }]}
             >
               {stat.value}
             </Text>
             <Text
-              className="text-xs font-medium leading-snug"
-              style={{ color: colors.textSecondary }}
+              style={[styles.statLabel, { color: colors.textSecondary }]}
             >
               {stat.label}
             </Text>
-          </TouchableOpacity>
+          </View>
+        </AnimatedPressable>
+      </Animated.View>
+    );
+  };
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(100).duration(400)}
+      style={styles.container}
+    >
+      <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+        Today at a Glance
+      </Text>
+      <View style={styles.statsRow}>
+        {stats.map((stat, index) => (
+          <StatCard key={stat.id} stat={stat} index={index} />
         ))}
       </View>
-    </View>
+    </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    marginBottom: 16,
+  },
+  statsRow: {
+    flexDirection: 'row',
+  },
+  statCard: {
+    borderRadius: 18,
+    padding: 18,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+});

@@ -2,13 +2,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
+    KeyboardAvoidingView,
+    Platform,
   Pressable,
-  ScrollView,
+    ScrollView,
   StyleSheet,
-  Text,
-  View,
+    Text,
+    View,
 } from 'react-native';
 import Animated, {
   Easing,
@@ -99,48 +99,48 @@ export default function RegisterScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
-      >
-        <ScrollView
+    >
+      <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
             { paddingTop: Math.max(insets.top, 40) },
           ]}
-          keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-        >
+      >
           <View style={styles.content}>
-            {/* Header */}
+          {/* Header */}
             <Animated.View
               entering={FadeInDown.delay(100).duration(600).easing(Easing.out(Easing.ease))}
               style={styles.header}
             >
-              <Text
+            <Text
                 style={[styles.title, { color: colors.textPrimary }]}
-              >
-                Create Account
-              </Text>
-              <Text
+            >
+              Create Account
+            </Text>
+            <Text
                 style={[styles.subtitle, { color: colors.textSecondary }]}
-              >
-                Start your meal tracking journey today
-              </Text>
+            >
+              Start your meal tracking journey today
+            </Text>
             </Animated.View>
 
-            {/* Form */}
+          {/* Form */}
             <View style={styles.form}>
               <AnimatedInput
                 label="Full Name"
                 icon="person-outline"
-                value={name}
-                onChangeText={(text) => {
-                  setName(text);
-                  setError('');
-                }}
-                autoCapitalize="words"
-                autoComplete="name"
+                  value={name}
+                  onChangeText={(text) => {
+                    setName(text);
+                    setError('');
+                  }}
+                  autoCapitalize="words"
+                  autoComplete="name"
                 error={!!error && !name.trim()}
                 delay={200}
               />
@@ -148,33 +148,33 @@ export default function RegisterScreen() {
               <AnimatedInput
                 label="Email"
                 icon="mail-outline"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setError('');
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setError('');
+                  }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
                 autoCorrect={false}
                 error={!!error && !email.trim()}
                 delay={250}
-              />
+                />
 
               <AnimatedInput
                 label="Password"
                 icon="lock-closed-outline"
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  setError('');
-                }}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setError('');
+                  }}
                 secureTextEntry
                 showPasswordToggle
                 showPassword={showPassword}
                 onPasswordToggle={() => setShowPassword(!showPassword)}
-                autoCapitalize="none"
-                autoComplete="password-new"
+                  autoCapitalize="none"
+                  autoComplete="password-new"
                 error={!!error && (!password.trim() || password.length < 6)}
                 delay={300}
               />
@@ -182,72 +182,72 @@ export default function RegisterScreen() {
               <AnimatedInput
                 label="Confirm Password"
                 icon="lock-closed-outline"
-                value={confirmPassword}
-                onChangeText={(text) => {
-                  setConfirmPassword(text);
-                  setError('');
-                }}
+                  value={confirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    setError('');
+                  }}
                 secureTextEntry
                 showPasswordToggle
                 showPassword={showConfirmPassword}
                 onPasswordToggle={() => setShowConfirmPassword(!showConfirmPassword)}
-                autoCapitalize="none"
-                autoComplete="password-new"
+                  autoCapitalize="none"
+                  autoComplete="password-new"
                 error={!!error && password !== confirmPassword && confirmPassword.length > 0}
                 delay={350}
               />
 
-              {/* Error Message */}
+            {/* Error Message */}
               {error && (
                 <Animated.View
                   entering={FadeIn.duration(300)}
                   exiting={FadeIn.duration(200)}
                   style={[styles.errorContainer, { backgroundColor: `${colors.error}15` }]}
-                >
+              >
                   <Text style={[styles.errorText, { color: colors.error }]}>
-                    {error}
-                  </Text>
+                  {error}
+                </Text>
                 </Animated.View>
               )}
 
-              {/* Sign Up Button */}
+            {/* Sign Up Button */}
               <Animated.View
                 entering={FadeInUp.delay(400).duration(500).easing(Easing.out(Easing.ease))}
                 style={styles.buttonContainer}
               >
-                <PrimaryButton
-                  title="Create Account"
-                  onPress={handleRegister}
-                  loading={isLoading}
-                  disabled={isLoading}
-                  size="lg"
-                />
+            <PrimaryButton
+              title="Create Account"
+              onPress={handleRegister}
+              loading={isLoading}
+              disabled={isLoading}
+              size="lg"
+            />
               </Animated.View>
-            </View>
+          </View>
 
-            {/* Footer */}
+          {/* Footer */}
             <Animated.View
               entering={FadeInUp.delay(500).duration(500).easing(Easing.out(Easing.ease))}
               style={styles.footer}
             >
-              <Text
+            <Text
                 style={[styles.footerText, { color: colors.textSecondary }]}
-              >
-                Already have an account?{' '}
+            >
+              Already have an account?{' '}
               </Text>
               <Link href="./login" asChild>
                 <Pressable>
-                  <Text
+                <Text
                     style={[styles.footerLink, { color: colors.primary }]}
-                  >
-                    Sign In
-                  </Text>
+                >
+                  Sign In
+                </Text>
                 </Pressable>
               </Link>
             </Animated.View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
     </View>
   );
 }

@@ -150,10 +150,10 @@ export default function Hero() {
               </motion.div>
             </motion.div>
 
-            {/* Right Column - Phone Mockup */}
+            {/* Right Column - Phone Mockup - Hidden on mobile/tablet, visible on desktop */}
             <motion.div
               variants={fadeIn}
-              className="relative flex justify-center lg:justify-end order-first lg:order-last"
+              className="hidden lg:flex relative justify-center lg:justify-end order-first lg:order-last"
             >
               <div className="relative w-full max-w-xs lg:max-w-sm">
                 {/* Glow Effect */}

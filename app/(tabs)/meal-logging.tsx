@@ -6,14 +6,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Dimensions,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
+    Dimensions,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
   Pressable,
-  ScrollView,
+    ScrollView,
   StyleSheet,
-  Text,
+    Text,
   View,
 } from 'react-native';
 import Animated, {
@@ -241,7 +241,7 @@ export default function MealLoggingScreen() {
         setTimeManuallyChanged(false);
         setCalories('');
         setCapturedImage(null);
-
+        
         // Navigate to timeline
         router.push('./timeline');
       } else {
@@ -281,7 +281,7 @@ export default function MealLoggingScreen() {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[styles.container, { backgroundColor: colors.background }]}
-    >
+      >
       {/* Header with Gradient */}
       <Animated.View
         entering={FadeInDown.duration(400).springify()}
@@ -310,7 +310,7 @@ export default function MealLoggingScreen() {
             </Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
               Capture and log your meal
-            </Text>
+              </Text>
           </View>
         </View>
       </Animated.View>
@@ -331,7 +331,7 @@ export default function MealLoggingScreen() {
         >
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             Meal Photo
-          </Text>
+            </Text>
           <AnimatedPressable
             onPress={handleImagePress}
             style={imageAnimatedStyle}
@@ -340,8 +340,8 @@ export default function MealLoggingScreen() {
               style={[
                 styles.imageContainer,
                 {
-                  backgroundColor: colors.surface,
-                  borderColor: capturedImage ? colors.primary : colors.border,
+                backgroundColor: colors.surface,
+                borderColor: capturedImage ? colors.primary : colors.border,
                 },
               ]}
             >
@@ -350,11 +350,11 @@ export default function MealLoggingScreen() {
                   entering={FadeInUp.duration(300)}
                   style={styles.imageWrapper}
                 >
-                  <Image
-                    source={{ uri: capturedImage }}
+                <Image
+                  source={{ uri: capturedImage }}
                     style={styles.image}
-                    resizeMode="cover"
-                  />
+                  resizeMode="cover"
+                />
                   <View style={[styles.imageOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.2)' }]}>
                     <View
                       style={[
@@ -389,7 +389,7 @@ export default function MealLoggingScreen() {
                   </Text>
                 </View>
               )}
-            </View>
+          </View>
           </AnimatedPressable>
         </Animated.View>
 
@@ -400,22 +400,22 @@ export default function MealLoggingScreen() {
         >
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             Meal Details
-          </Text>
+            </Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <AnimatedInput
               label="Meal Title"
               icon="restaurant-outline"
-              value={title}
-              onChangeText={(text) => {
-                setTitle(text);
-                setError('');
-              }}
+                value={title}
+                onChangeText={(text) => {
+                  setTitle(text);
+                  setError('');
+                }}
               placeholder="e.g., Grilled Chicken Salad"
               error={!!error && !title}
               delay={0}
-            />
+              />
 
-            {/* Meal Type Picker */}
+          {/* Meal Type Picker */}
             <MealTypePicker
               value={mealType}
               onValueChange={handleMealTypeChange}
@@ -435,7 +435,7 @@ export default function MealLoggingScreen() {
                 is24Hour={false}
                 display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                 onChange={handleTimeChange}
-              />
+                />
             )}
 
             {/* Date Picker */}
@@ -460,41 +460,41 @@ export default function MealLoggingScreen() {
               />
             )}
 
-            {/* Calories Input */}
+          {/* Calories Input */}
             <AnimatedInput
               label="Calories (Optional)"
               icon="flame-outline"
-              value={calories}
-              onChangeText={(text) => {
-                setCalories(text.replace(/[^0-9]/g, ''));
-                setError('');
-              }}
+                value={calories}
+                onChangeText={(text) => {
+                  setCalories(text.replace(/[^0-9]/g, ''));
+                  setError('');
+                }}
               placeholder="Enter calories"
-              keyboardType="number-pad"
+                keyboardType="number-pad"
               delay={100}
-            />
+              />
 
-            {/* Error Message */}
-            {error ? (
+          {/* Error Message */}
+          {error ? (
               <Animated.View
                 entering={FadeInDown.duration(300)}
                 style={[styles.errorContainer, { backgroundColor: `${colors.error}15` }]}
-              >
-                <Ionicons
-                  name="alert-circle"
-                  size={18}
-                  color={colors.error}
+            >
+              <Ionicons
+                name="alert-circle"
+                size={18}
+                color={colors.error}
                   style={styles.errorIcon}
-                />
+              />
                 <Text style={[styles.errorText, { color: colors.error }]}>
-                  {error}
-                </Text>
+                {error}
+              </Text>
               </Animated.View>
             ) : null}
-          </View>
+            </View>
         </Animated.View>
 
-        {/* Save Button */}
+          {/* Save Button */}
         <Animated.View
           entering={FadeInDown.delay(300).duration(400).springify()}
           style={styles.saveButtonContainer}

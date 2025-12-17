@@ -3,13 +3,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  Modal,
-  Platform,
+    Alert,
+    Modal,
+    Platform,
   Pressable,
-  ScrollView,
+    ScrollView,
   StyleSheet,
-  Text,
+    Text,
   View,
 } from 'react-native';
 import Animated, {
@@ -180,7 +180,7 @@ const SettingsScreen = () => {
         style={[
           styles.header,
           {
-            backgroundColor: colors.surface,
+          backgroundColor: colors.surface,
             paddingTop: insets.top + 16,
           },
         ]}
@@ -211,38 +211,38 @@ const SettingsScreen = () => {
           </Text>
           <View style={styles.sectionContent}>
             <SettingRow
-              icon="person-outline"
-              title="Profile"
-              subtitle="Manage your profile information"
-              onPress={() => router.push('/profile')}
+            icon="person-outline"
+            title="Profile"
+            subtitle="Manage your profile information"
+            onPress={() => router.push('/profile')}
               delay={0}
-            />
+          />
             <SettingRow
-              icon="notifications-outline"
-              title="Notifications"
-              subtitle={
-                Platform.OS === 'web'
-                  ? 'Mobile only'
-                  : settings?.notificationPermission
-                  ? 'Enabled'
-                  : 'Disabled'
-              }
-              rightComponent={
+            icon="notifications-outline"
+            title="Notifications"
+            subtitle={
+              Platform.OS === 'web'
+                ? 'Mobile only'
+                : settings?.notificationPermission
+                ? 'Enabled'
+                : 'Disabled'
+            }
+            rightComponent={
                 <AnimatedToggle
                   value={
                     Platform.OS !== 'web' &&
                     (settings?.notificationPermission || false)
                   }
-                  onValueChange={(value) =>
-                    updateSettings({ notificationPermission: value })
-                  }
-                  disabled={Platform.OS === 'web'}
-                />
-              }
-              showArrow={false}
+                onValueChange={(value) =>
+                  updateSettings({ notificationPermission: value })
+                }
+                disabled={Platform.OS === 'web'}
+              />
+            }
+            showArrow={false}
               delay={50}
-            />
-          </View>
+          />
+        </View>
         </Animated.View>
 
         {/* Support Section */}
@@ -255,22 +255,22 @@ const SettingsScreen = () => {
           </Text>
           <View style={styles.sectionContent}>
             <SettingRow
-              icon="help-circle-outline"
-              title="Help & Support"
-              subtitle="Get help or contact support"
-              onPress={() =>
-                Alert.alert('Help', 'Contact support at linkupcontact247@gmail.com')
-              }
+            icon="help-circle-outline"
+            title="Help & Support"
+            subtitle="Get help or contact support"
+            onPress={() =>
+              Alert.alert('Help', 'Contact support at linkupcontact247@gmail.com')
+            }
               delay={0}
-            />
+          />
             <SettingRow
-              icon="information-circle-outline"
+            icon="information-circle-outline"
               title="About Melo"
-              subtitle="App version and information"
-              onPress={() => setShowAbout(true)}
+            subtitle="App version and information"
+            onPress={() => setShowAbout(true)}
               delay={50}
-            />
-          </View>
+          />
+        </View>
         </Animated.View>
 
         {/* Logout Section */}
@@ -280,15 +280,15 @@ const SettingsScreen = () => {
         >
           <View style={styles.sectionContent}>
             <SettingRow
-              icon="log-out-outline"
-              title="Logout"
-              subtitle="Sign out of your account"
-              onPress={handleLogout}
-              showArrow={false}
+            icon="log-out-outline"
+            title="Logout"
+            subtitle="Sign out of your account"
+            onPress={handleLogout}
+            showArrow={false}
               isDestructive={true}
               delay={0}
-            />
-          </View>
+          />
+        </View>
         </Animated.View>
       </ScrollView>
 
@@ -330,12 +330,12 @@ const SettingsScreen = () => {
               <View style={styles.modalHeaderContent}>
                 <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
                   About
-                </Text>
+              </Text>
                 <ModalCloseButton
-                  onPress={() => setShowAbout(false)}
+                onPress={() => setShowAbout(false)}
                   colors={colors}
                 />
-              </View>
+            </View>
             </Animated.View>
 
             <ScrollView
@@ -368,12 +368,12 @@ const SettingsScreen = () => {
                   Melo
                 </Text>
                 <View style={styles.modalVersionContainer}>
-                  <Text
+                <Text
                     style={[styles.modalVersion, { color: colors.textSecondary }]}
-                  >
-                    Version 1.0.0
-                  </Text>
-                </View>
+                >
+                  Version 1.0.0
+                </Text>
+              </View>
               </Animated.View>
 
               {/* Description */}
@@ -440,11 +440,11 @@ const SettingsScreen = () => {
                           { backgroundColor: `${colors.primary}15` },
                         ]}
                       >
-                        <Ionicons
-                          name={feature.icon as any}
-                          size={18}
-                          color={colors.primary}
-                        />
+                      <Ionicons 
+                        name={feature.icon as any} 
+                        size={18} 
+                        color={colors.primary} 
+                      />
                       </View>
                       <Text
                         style={[styles.modalFeatureText, { color: colors.textPrimary }]}
@@ -477,7 +477,7 @@ const SettingsScreen = () => {
                 >
                   <Text
                     style={[styles.modalTechStack, { color: colors.textSecondary }]}
-                  >
+                >
                     React Native • Expo • TypeScript
                   </Text>
                   <Text
@@ -488,9 +488,9 @@ const SettingsScreen = () => {
                   <Text
                     style={[styles.modalTechStack, { color: colors.textSecondary }]}
                   >
-                    Cloudinary • JWT Authentication
-                  </Text>
-                </View>
+                  Cloudinary • JWT Authentication
+                </Text>
+              </View>
               </Animated.View>
 
               {/* Contact */}
@@ -535,7 +535,7 @@ const SettingsScreen = () => {
                     <Text
                       style={[styles.modalContact, { color: colors.textSecondary }]}
                     >
-                      https://mealogger.vercel.app
+                      https://meloapp.vercel.app
                     </Text>
                   </View>
                 </View>

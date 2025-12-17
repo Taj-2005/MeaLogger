@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
@@ -13,6 +14,7 @@ import GreetingHeader from '../components/GreetingHeader';
 import MotivationBanner from '../components/MotivationBanner';
 import QuickActions from '../components/QuickActions';
 import StreakTracker from '../components/StreakTracker';
+import TodayMealsPreview from '../components/TodayMealsPreview';
 import TodaySummary from '../components/TodaySummary';
 
 export default function Dashboard() {
@@ -33,7 +35,7 @@ export default function Dashboard() {
   useEffect(() => {
     // Only load data if user is authenticated
     if (user) {
-      loadDashboardData();
+    loadDashboardData();
     } else {
       setLoading(false);
     }
@@ -127,18 +129,40 @@ export default function Dashboard() {
     loadDashboardData(false);
   }, []);
 
+  const insets = useSafeAreaInsets();
+
+  // Get today's meals for preview
+  const todayMeals = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return meals
+      .filter((meal: any) => {
+        const mealDate = new Date(meal.date).toISOString().split('T')[0];
+        return mealDate === today;
+      })
+      .sort((a: any, b: any) => {
+        // Sort by time (most recent first)
+        const timeA = a.time ? new Date(a.time).getTime() : new Date(a.date).getTime();
+        const timeB = b.time ? new Date(b.time).getTime() : new Date(b.date).getTime();
+        return timeB - timeA;
+      });
+  }, [meals]);
+
   if (loading) {
     return <LoadingScreen message="Loading your dashboard..." variant="minimal" />;
   }
 
   return (
     <View
-      className="flex-1"
-      style={{ backgroundColor: colors.background }}
+      style={{ 
+        flex: 1,
+        backgroundColor: colors.background,
+      }}
     >
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ 
+          paddingBottom: Math.max(insets.bottom, 24),
+        }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -161,6 +185,11 @@ export default function Dashboard() {
         />
 
         <QuickActions />
+
+        <TodayMealsPreview 
+          meals={todayMeals}
+          onViewAll={() => router.push('./timeline')}
+        />
 
         <TodaySummary
           todayMeals={stats.todayMeals}

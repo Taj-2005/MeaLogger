@@ -1,5 +1,11 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -10,109 +16,94 @@ interface StreakTrackerProps {
 
 export default function StreakTracker({ streak, todayMeals }: StreakTrackerProps) {
   const { colors } = useTheme();
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const scale = useSharedValue(0.9);
+  const opacity = useSharedValue(0);
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 50,
-        friction: 7,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  React.useEffect(() => {
+    scale.value = withSpring(1, {
+      damping: 15,
+      stiffness: 100,
+    });
+    opacity.value = withSpring(1, {
+      damping: 15,
+      stiffness: 100,
+    });
   }, [streak]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
 
   const progress = Math.min(streak / 7, 1);
 
   return (
     <Animated.View
-      className="bg-white rounded-2xl shadow-md px-6 py-6 mx-5 mb-6"
-      style={{
-        shadowColor: colors.shadow,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
-        transform: [{ scale: scaleAnim }],
-        opacity: opacityAnim,
-      }}
+      entering={FadeInDown.delay(150).duration(500).springify()}
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.surface,
+          shadowColor: colors.shadow,
+        },
+        animatedStyle,
+      ]}
     >
-      <View className="flex-row items-center justify-between">
-        <View className="flex-1 pl-6">
-          <View className="flex-row items-center mb-2">
-            <Ionicons name="flame" size={28} color={colors.warning} />
+      <View style={styles.content}>
+        <View style={styles.leftSection}>
+          <View style={styles.streakHeader}>
+            <Ionicons name="flame" size={32} color={colors.warning} />
             <Text
-              className="text-5xl font-bold ml-3 tracking-tight"
-              style={{ color: colors.textPrimary }}
+              style={[styles.streakNumber, { color: colors.textPrimary }]}
             >
               {streak}
             </Text>
           </View>
           <Text
-            className="text-sm font-semibold mb-1"
-            style={{ color: colors.textSecondary }}
+            style={[styles.streakLabel, { color: colors.textSecondary }]}
           >
             Day Streak
           </Text>
           {todayMeals > 0 && (
             <Text
-              className="text-xs leading-snug"
-              style={{ color: colors.textSecondary }}
+              style={[styles.todayMeals, { color: colors.textSecondary }]}
             >
               {todayMeals} meal{todayMeals > 1 ? 's' : ''} logged today
             </Text>
           )}
         </View>
 
-        <View style={{ width: 100, height: 100, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={styles.circleContainer}>
           <View
-            style={{
-              width: 100,
-              height: 100,
-              borderRadius: 50,
-              borderWidth: 6,
-              borderColor: `${colors.warning}20`,
-              position: 'absolute',
-            }}
+            style={[
+              styles.circleBase,
+              { borderColor: `${colors.warning}20` },
+            ]}
           />
           {streak > 0 && (
             <View
-              style={{
-                width: 100,
-                height: 100,
-                borderRadius: 50,
-                borderWidth: 6,
-                borderColor: colors.warning,
-                borderTopColor: progress > 0.5 ? colors.warning : 'transparent',
-                borderRightColor: progress > 0.25 ? colors.warning : 'transparent',
-                borderBottomColor: progress > 0.75 ? colors.warning : 'transparent',
-                borderLeftColor: progress > 0 ? colors.warning : 'transparent',
-                position: 'absolute',
-                transform: [{ rotate: '-90deg' }],
-              }}
+              style={[
+                styles.circleProgress,
+                {
+                  borderColor: colors.warning,
+                  borderTopColor: progress > 0.5 ? colors.warning : 'transparent',
+                  borderRightColor: progress > 0.25 ? colors.warning : 'transparent',
+                  borderBottomColor: progress > 0.75 ? colors.warning : 'transparent',
+                  borderLeftColor: progress > 0 ? colors.warning : 'transparent',
+                },
+              ]}
             />
           )}
           <View
-            style={{
-              width: 88,
-              height: 88,
-              borderRadius: 44,
-              backgroundColor: `${colors.warning}10`,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            style={[
+              styles.circleInner,
+              { backgroundColor: `${colors.warning}10` },
+            ]}
           >
             {streak > 0 ? (
-              <Ionicons name="checkmark-circle" size={32} color={colors.success} />
+              <Ionicons name="checkmark-circle" size={36} color={colors.success} />
             ) : (
-              <Ionicons name="flame-outline" size={28} color={colors.warning} />
+              <Ionicons name="flame-outline" size={32} color={colors.warning} />
             )}
           </View>
         </View>
@@ -120,4 +111,74 @@ export default function StreakTracker({ streak, todayMeals }: StreakTrackerProps
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    borderRadius: 24,
+    padding: 24,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  leftSection: {
+    flex: 1,
+    paddingLeft: 8,
+  },
+  streakHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  streakNumber: {
+    fontSize: 48,
+    fontWeight: '800',
+    marginLeft: 12,
+    letterSpacing: -1,
+  },
+  streakLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  todayMeals: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  circleContainer: {
+    width: 100,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  circleBase: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 6,
+    position: 'absolute',
+  },
+  circleProgress: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 6,
+    position: 'absolute',
+    transform: [{ rotate: '-90deg' }],
+  },
+  circleInner: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
 

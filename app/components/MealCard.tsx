@@ -151,8 +151,8 @@ export default function MealCard({
         >
           {/* Image Thumbnail */}
           <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: imageUrl }}
+        <Image
+          source={{ uri: imageUrl }}
               style={styles.image}
             />
             <View
@@ -171,12 +171,12 @@ export default function MealCard({
                   },
                 ]}
               >
-                <Ionicons
+              <Ionicons 
                   name={getMealIcon(type)}
                   size={24}
-                  color={colors.primary}
-                />
-              </View>
+                color={colors.primary} 
+              />
+            </View>
             </View>
           </View>
 
@@ -222,7 +222,7 @@ export default function MealCard({
                       backgroundColor: `${colors.primary}15`,
                     },
                   ]}
-                >
+              >
                   <Ionicons
                     name={getMealIcon(type)}
                     size={14}
