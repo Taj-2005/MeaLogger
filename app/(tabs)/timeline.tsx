@@ -403,7 +403,7 @@ export default function TimelineScreen() {
         <View style={styles.headerContent}>
           <View>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-              Timeline
+              Meals
             </Text>
             <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
               Your meal history
