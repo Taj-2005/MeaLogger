@@ -24,7 +24,8 @@ const register = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists',
+        message: 'User with this email already exists. Please sign in instead.',
+        code: 'USER_ALREADY_EXISTS',
       });
     }
 
@@ -75,7 +76,8 @@ const register = async (req, res) => {
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists',
+        message: 'User with this email already exists. Please sign in instead.',
+        code: 'USER_ALREADY_EXISTS',
       });
     }
     
@@ -124,7 +126,8 @@ const login = async (req, res) => {
       logger.info('Login attempt: User not found', { email: email.toLowerCase() });
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password',
+        message: 'User not found. Please sign up to create an account.',
+        code: 'USER_NOT_FOUND',
       });
     }
 
@@ -146,7 +149,8 @@ const login = async (req, res) => {
       logger.info('Login attempt: Invalid password', { userId: user._id, email: user.email });
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password',
+        message: 'Incorrect password. Please try again.',
+        code: 'INCORRECT_PASSWORD',
       });
     }
 
@@ -155,11 +159,16 @@ const login = async (req, res) => {
       const tokens = generateTokens(user._id);
       accessToken = tokens.accessToken;
       refreshToken = tokens.refreshToken;
+      
+      if (!accessToken || !refreshToken) {
+        throw new Error('Token generation returned empty tokens');
+      }
     } catch (tokenError) {
       logger.error('Login error: Token generation failed', {
         error: tokenError.message,
         stack: tokenError.stack,
         userId: user._id,
+        hasSecret: !!config.jwt.secret,
       });
       return res.status(500).json({
         success: false,
@@ -167,13 +176,37 @@ const login = async (req, res) => {
       });
     }
 
+    // Save refresh token to database BEFORE returning response
+    // This ensures the token is persisted and can be used for refresh
     try {
-      await user.addRefreshToken(refreshToken);
+      // Reload user with refreshTokens field to ensure we can save
+      const userWithTokens = await User.findById(user._id).select('+refreshTokens');
+      if (!userWithTokens) {
+        throw new Error('User not found when saving refresh token');
+      }
+      
+      await userWithTokens.addRefreshToken(refreshToken);
+      
+      // Verify the token was saved
+      const verifyUser = await User.findById(user._id).select('+refreshTokens');
+      if (!verifyUser || !verifyUser.refreshTokens || !verifyUser.refreshTokens.includes(refreshToken)) {
+        logger.error('Login error: Refresh token not persisted after save', {
+          userId: user._id,
+          tokenLength: refreshToken.length,
+        });
+        throw new Error('Refresh token was not saved correctly');
+      }
+      
+      logger.info('Refresh token saved successfully', { 
+        userId: user._id, 
+        tokenCount: verifyUser.refreshTokens.length 
+      });
     } catch (tokenSaveError) {
       logger.error('Login error: Failed to save refresh token', {
         error: tokenSaveError.message,
         stack: tokenSaveError.stack,
         userId: user._id,
+        errorName: tokenSaveError.name,
       });
       return res.status(500).json({
         success: false,
@@ -304,13 +337,37 @@ const refreshToken = async (req, res) => {
       });
     }
 
+    // Remove old token and add new one
     try {
       await user.removeRefreshToken(token);
-      await user.addRefreshToken(newRefreshToken);
+      
+      // Reload user to ensure we have the latest refreshTokens
+      const userForAdd = await User.findById(user._id).select('+refreshTokens');
+      if (!userForAdd) {
+        throw new Error('User not found when adding new refresh token');
+      }
+      
+      await userForAdd.addRefreshToken(newRefreshToken);
+      
+      // Verify the new token was saved
+      const verifyUser = await User.findById(user._id).select('+refreshTokens');
+      if (!verifyUser || !verifyUser.refreshTokens || !verifyUser.refreshTokens.includes(newRefreshToken)) {
+        logger.error('Refresh token error: New token not persisted after save', {
+          userId: user._id,
+        });
+        throw new Error('New refresh token was not saved correctly');
+      }
+      
+      logger.info('Refresh tokens updated successfully', { 
+        userId: user._id,
+        tokenCount: verifyUser.refreshTokens.length 
+      });
     } catch (tokenSaveError) {
       logger.error('Refresh token error: Failed to update tokens', {
         error: tokenSaveError.message,
+        stack: tokenSaveError.stack,
         userId: user._id,
+        errorName: tokenSaveError.name,
       });
       return res.status(500).json({
         success: false,

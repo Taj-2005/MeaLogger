@@ -47,31 +47,42 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 };
 
 userSchema.methods.addRefreshToken = async function (token) {
-  const user = await this.constructor.findById(this._id).select('+refreshTokens');
-  if (!user) {
-    throw new Error('User not found');
+  // Ensure we have access to refreshTokens field
+  let user = this;
+  if (!this.refreshTokens) {
+    user = await this.constructor.findById(this._id).select('+refreshTokens');
+    if (!user) {
+      throw new Error('User not found');
+    }
   }
 
   if (!user.refreshTokens) {
     user.refreshTokens = [];
   }
+  
+  // Limit to 5 refresh tokens per user (remove oldest if at limit)
   if (user.refreshTokens.length >= 5) {
     user.refreshTokens.shift();
   }
+  
   user.refreshTokens.push(token);
-  await user.save();
+  await user.save({ validateBeforeSave: false });
   return user;
 };
 
 userSchema.methods.removeRefreshToken = async function (token) {
-  const user = await this.constructor.findById(this._id).select('+refreshTokens');
-  if (!user) {
-    return;
+  // Ensure we have access to refreshTokens field
+  let user = this;
+  if (!this.refreshTokens) {
+    user = await this.constructor.findById(this._id).select('+refreshTokens');
+    if (!user) {
+      return null;
+    }
   }
 
   if (user.refreshTokens && Array.isArray(user.refreshTokens)) {
     user.refreshTokens = user.refreshTokens.filter((t) => t !== token);
-    await user.save();
+    await user.save({ validateBeforeSave: false });
   }
   return user;
 };

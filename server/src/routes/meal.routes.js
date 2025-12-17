@@ -17,18 +17,50 @@ const upload = multer({
 
 router.use(authenticate);
 
+// Middleware to verify body parsing for POST requests
+router.use((req, res, next) => {
+  if (req.method === 'POST' && req.headers['content-type']?.includes('application/json')) {
+    // Verify body was parsed
+    if (!req.body || Object.keys(req.body).length === 0) {
+      const logger = require('../utils/logger');
+      logger.warn('POST request with empty body', {
+        url: req.url,
+        contentType: req.headers['content-type'],
+        method: req.method,
+      });
+    }
+  }
+  next();
+});
+
 router.post(
   '/',
   (req, res, next) => {
-    upload.single('image')(req, res, (err) => {
-      if (err) {
-        return res.status(400).json({
-          success: false,
-          message: err.message || 'File upload error',
-        });
-      }
+    // Only use multer for multipart/form-data requests
+    // For JSON requests (with imageUrl), skip multer and let JSON parser handle it
+    const contentType = req.headers['content-type'] || '';
+    
+    if (contentType.includes('multipart/form-data')) {
+      upload.single('image')(req, res, (err) => {
+        if (err) {
+          const logger = require('../utils/logger');
+          logger.error('Multer error:', {
+            error: err.message,
+            stack: err.stack,
+            contentType: req.headers['content-type'],
+          });
+          return res.status(400).json({
+            success: false,
+            message: err.message || 'File upload error',
+          });
+        }
+        next();
+      });
+    } else {
+      // For JSON requests, skip multer and proceed
+      // The JSON body parser in app.js will handle the body
       next();
-    });
+    }
   },
   validateMeal,
   mealController.createMeal

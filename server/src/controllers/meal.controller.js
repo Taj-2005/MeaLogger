@@ -6,6 +6,19 @@ const logger = require('../utils/logger');
 
 const createMeal = async (req, res) => {
   try {
+    // Ensure body is parsed - if not, it might be empty object
+    if (!req.body || typeof req.body !== 'object') {
+      logger.error('Create meal: Request body not parsed', {
+        contentType: req.headers['content-type'],
+        hasBody: !!req.body,
+        bodyType: typeof req.body,
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid request body. Please ensure Content-Type is application/json.',
+      });
+    }
+
     const { title, type, date, calories, imageUrl } = req.body;
 
     logger.info('Create meal request', {
@@ -17,9 +30,11 @@ const createMeal = async (req, res) => {
       date,
       calories,
       hasImageUrl: !!imageUrl,
+      imageUrlLength: imageUrl?.length,
       userId: req.userId,
       contentType: req.headers['content-type'],
       bodyKeys: Object.keys(req.body || {}),
+      bodyStringified: JSON.stringify(req.body).substring(0, 200), // First 200 chars for debugging
     });
 
     let finalImageUrl = imageUrl;
@@ -88,20 +103,56 @@ const createMeal = async (req, res) => {
       parsedDate = new Date();
     }
 
+    // Validate required fields before creating meal
+    if (!title || !type || !finalImageUrl) {
+      logger.warn('Create meal: Missing required fields', {
+        hasTitle: !!title,
+        hasType: !!type,
+        hasImageUrl: !!finalImageUrl,
+        userId: req.userId,
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: title, type, and imageUrl are required.',
+      });
+    }
+
     const meal = new Meal({
       user: req.userId,
-      title,
+      title: title.trim(),
       type,
       date: parsedDate,
-      calories: calories && calories !== '' ? parseInt(calories, 10) : null,
+      calories: calories && calories !== '' && calories !== null && calories !== undefined 
+        ? parseInt(calories, 10) 
+        : null,
       imageUrl: finalImageUrl,
       cloudinaryPublicId,
     });
 
+    // Validate meal before saving
+    const validationError = meal.validateSync();
+    if (validationError) {
+      logger.error('Create meal: Validation error', {
+        error: validationError.message,
+        errors: validationError.errors,
+        userId: req.userId,
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed: ' + validationError.message,
+        errors: validationError.errors,
+      });
+    }
+
     await meal.save();
     await meal.populate('user', 'name email');
 
-    logger.info('Meal created', { mealId: meal._id, userId: req.userId });
+    logger.info('Meal created successfully', { 
+      mealId: meal._id, 
+      userId: req.userId,
+      title: meal.title,
+      type: meal.type,
+    });
 
     res.status(201).json({
       success: true,
@@ -120,7 +171,31 @@ const createMeal = async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Create meal error:', error);
+    logger.error('Create meal error:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+      userId: req.userId,
+      body: req.body,
+      contentType: req.headers['content-type'],
+    });
+    
+    // Handle specific error types
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed: ' + error.message,
+        errors: error.errors,
+      });
+    }
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid data format: ' + error.message,
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Failed to create meal. Please try again.',

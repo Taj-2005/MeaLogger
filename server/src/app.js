@@ -22,17 +22,38 @@ app.use(helmet());
 const jsonParser = express.json({ limit: '10mb' });
 const urlencodedParser = express.urlencoded({ extended: true, limit: '10mb' });
 
+// JSON body parser - only for non-multipart requests
 app.use((req, res, next) => {
   const contentType = req.headers['content-type'] || '';
   if (contentType.includes('multipart/form-data')) {
     return next();
   }
-  jsonParser(req, res, next);
+  // Use JSON parser for application/json requests
+  if (contentType.includes('application/json')) {
+    jsonParser(req, res, (err) => {
+      if (err) {
+        logger.error('JSON body parsing error:', {
+          error: err.message,
+          contentType: req.headers['content-type'],
+          url: req.url,
+          method: req.method,
+        });
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid JSON in request body',
+        });
+      }
+      next();
+    });
+  } else {
+    next();
+  }
 });
 
+// URL encoded parser - only for non-multipart, non-JSON requests
 app.use((req, res, next) => {
   const contentType = req.headers['content-type'] || '';
-  if (contentType.includes('multipart/form-data')) {
+  if (contentType.includes('multipart/form-data') || contentType.includes('application/json')) {
     return next();
   }
   urlencodedParser(req, res, next);
