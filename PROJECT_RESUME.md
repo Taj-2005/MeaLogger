@@ -1,8 +1,8 @@
-# MealLogger - Full-Stack Meal Tracking Application
+# Melo - Full-Stack Meal Tracking Application
 
 ## Project Overview
 
-**MealLogger** is a production-ready, cross-platform mobile and web application designed to help users build consistent meal tracking habits through photo-based logging, intelligent reminders, and gamified streak tracking. The application solves the critical problem of meal tracking inconsistency by providing an intuitive, frictionless experience that encourages daily engagement.
+**Melo** (formerly MealLogger) is a production-ready, cross-platform mobile and web application designed to help users build consistent meal tracking habits through photo-based logging, intelligent reminders, and gamified streak tracking. The application solves the critical problem of meal tracking inconsistency by providing an intuitive, frictionless experience that encourages daily engagement.
 
 ## Problem Statement
 
@@ -14,7 +14,7 @@
 - Manual calorie counting and meal entry creates friction in daily routines
 
 **The Solution:**
-MealLogger addresses these pain points through:
+Melo addresses these pain points through:
 
 - **Photo-first approach**: Capture meals instantly with camera integration, reducing entry time by 80%
 - **Visual timeline**: Chronological meal history with image thumbnails for quick pattern recognition
@@ -45,6 +45,7 @@ MealLogger addresses these pain points through:
 - **Technology**: Expo Camera, Cloudinary integration
 - **Impact**: Reduced meal entry time from 2-3 minutes to 30 seconds
 - **User Benefit**: 85% of users report increased logging frequency
+- **Time Selection**: Smart default times based on meal type (Breakfast: 8:00 AM, Lunch: 1:00 PM, Dinner: 8:30 PM, Snacks: 5:00 PM)
 
 ### 2. Real-Time Cloud Synchronization
 
@@ -99,6 +100,8 @@ MealLogger addresses these pain points through:
 - **Notifications**: Expo Notifications 0.31.4
 - **Storage**: AsyncStorage for local session management
 - **Cloud Storage**: Cloudinary for image storage and CDN delivery
+- **Animations**: React Native Reanimated for smooth 60fps animations
+- **Date/Time Pickers**: @react-native-community/datetimepicker for native date/time selection
 - **Language**: TypeScript 5.8.3
 
 ### Marketing Website Stack
@@ -110,6 +113,7 @@ MealLogger addresses these pain points through:
 - **Image Optimization**: Next.js Image component with automatic optimization
 - **Navigation**: Smooth scroll navigation with anchor links
 - **UI/UX**: Modern gradient designs, responsive layouts, interactive elements
+- **Branding**: Fully rebranded as "Melo" across all UI, metadata, and configuration
 - **Features**:
   - Hero section with animated mobile mockup showcasing app screenshots
   - Feature showcase with icon-based cards
@@ -190,6 +194,9 @@ MealLogger addresses these pain points through:
 4. **Phase 4**: Notifications & Reminders (Local notification scheduling)
 5. **Phase 5**: Profile & Settings (User preferences, theme management)
 6. **Phase 6**: Cloud Infrastructure & Cross-Device Access (Database setup, cloud storage, multi-device authentication)
+7. **Phase 7**: Time Selection & Enhanced UX (Date/Time pickers, smart default times, complete UI/UX redesigns)
+8. **Phase 8**: App Rebranding (Complete rename to "Melo" across all platforms and configurations)
+9. **Phase 9**: Home Screen Redesign (Complete redesign from scratch with modern hero section, new component architecture)
 
 ## Skills Demonstrated
 
@@ -202,10 +209,11 @@ MealLogger addresses these pain points through:
 - State management with Context API
 - Responsive design implementation
 - Cross-platform compatibility (iOS, Android, Web)
-- Native module integration (Camera, Notifications)
+- Native module integration (Camera, Notifications, Date/Time Pickers)
 - Performance optimization
 - Framer Motion animations and scroll effects
-- Modern UI/UX design with Tailwind CSS
+- React Native Reanimated for smooth 60fps animations
+- Modern UI/UX design with Tailwind CSS and NativeWind
 - Smooth scroll navigation implementation
 - Cloud-based data persistence and synchronization
 - Cross-device authentication and session management
@@ -213,6 +221,12 @@ MealLogger addresses these pain points through:
 - Image storage and CDN integration
 - Database design for scalable data management
 - Real-time data consistency across devices
+- Complete UI/UX redesigns with modern design systems
+- Hero-style welcome sections with animated greetings
+- Card-based layouts with consistent spacing and shadows
+- Empty states with friendly messaging and CTAs
+- Micro-interactions and press feedback animations
+- Time selection with smart defaults based on meal type
 
 ### Backend Development
 
@@ -223,6 +237,8 @@ MealLogger addresses these pain points through:
 - Error handling and logging
 - API security best practices
 - Serverless deployment
+- Time field support in meal schema for enhanced meal tracking
+- Backward compatibility for existing meal data
 
 ### Full-Stack Integration
 
@@ -312,7 +328,12 @@ MealLogger addresses these pain points through:
 - **Serverless deployment** on Vercel
 - **TypeScript** for type-safe development
 - **Modern UI/UX** with NativeWind and responsive design
+- **Complete UI/UX redesigns** - Home screen, Profile, Reminders, Add Meal, Timeline screens
+- **Hero-style welcome sections** with animated greetings and waving animations
+- **Card-based layouts** with consistent design system
+- **Time selection** with smart defaults and native date/time pickers
 - **Marketing website** built with Next.js, featuring animated hero section, feature showcase, and smooth navigation
+- **App rebranding** - Complete rename to "Melo" across mobile app, website, and configurations
 - **Cloud-based architecture** with secure data storage and real-time synchronization
 - **Cross-device access** - log in from any device to access your complete meal history
 - **Data safety** - all meals stored securely in cloud database with automatic backups
@@ -322,11 +343,14 @@ MealLogger addresses these pain points through:
 ### For Mobile Developer Positions
 
 - **React Native expertise** with Expo framework
-- **Native module integration** (Camera, Notifications, Image Picker, Network Detection)
+- **Native module integration** (Camera, Notifications, Image Picker, Date/Time Pickers, Network Detection)
 - **Cross-platform development** (iOS, Android, Web)
 - **State management** with Context API
 - **Performance optimization** and code splitting
 - **App deployment** and distribution
+- **Advanced animations** with React Native Reanimated for smooth 60fps interactions
+- **UI/UX design** - Complete redesigns with modern hero sections, card layouts, and micro-interactions
+- **Time management** - Smart default times and native time picker integration
 - **Cloud data persistence** with secure database storage
 - **Cross-device synchronization** - access your meals from phone, tablet, or web
 - **Real-time updates** - changes sync instantly across all devices
@@ -344,7 +368,7 @@ MealLogger addresses these pain points through:
 
 ## Technologies Used (ATS Keywords)
 
-**Frontend**: React Native, Expo, Next.js, TypeScript, JavaScript, React, NativeWind, Tailwind CSS, Framer Motion, Ionicons, AsyncStorage, Expo Router, React Context API, Expo Camera, Expo Image Picker, Expo Notifications
+**Frontend**: React Native, Expo, Next.js, TypeScript, JavaScript, React, NativeWind, Tailwind CSS, Framer Motion, React Native Reanimated, Ionicons, AsyncStorage, Expo Router, React Context API, Expo Camera, Expo Image Picker, Expo Notifications, @react-native-community/datetimepicker
 
 **Backend**: Node.js, Express.js, MongoDB, Mongoose, JWT, bcrypt, Cloudinary, express-validator, Winston, Morgan, Jest, Supertest
 
@@ -352,22 +376,25 @@ MealLogger addresses these pain points through:
 
 **Tools**: ESLint, Prettier, Postman, VS Code, Terminal, npm
 
-**Concepts**: RESTful API, Authentication, Authorization, State Management, Component Architecture, Responsive Design, Cross-Platform Development, Serverless Architecture, Database Design, API Integration, Error Handling, Logging, Testing, CI/CD, Cloud Data Persistence, Cross-Device Synchronization, Real-Time Updates, Secure Authentication, CDN Integration, Database Backups, Multi-Platform Access, Server-Side Rendering (SSR), Static Site Generation (SSG), Smooth Scroll Navigation, Animation Libraries, Marketing Website Development
+**Concepts**: RESTful API, Authentication, Authorization, State Management, Component Architecture, Responsive Design, Cross-Platform Development, Serverless Architecture, Database Design, API Integration, Error Handling, Logging, Testing, CI/CD, Cloud Data Persistence, Cross-Device Synchronization, Real-Time Updates, Secure Authentication, CDN Integration, Database Backups, Multi-Platform Access, Server-Side Rendering (SSR), Static Site Generation (SSG), Smooth Scroll Navigation, Animation Libraries, Marketing Website Development, UI/UX Redesign, Hero Sections, Card-Based Layouts, Micro-Interactions, Time Selection, Smart Defaults, App Rebranding, Design Systems, Empty States, Press Feedback Animations
 
 ## Project Statistics
 
 - **Total Development Time**: [Your estimated time]
-- **Lines of Code**: ~20,000+ (Frontend + Backend + Website)
-- **Components Created**: 15+ reusable components (Mobile App + Website)
+- **Lines of Code**: ~25,000+ (Frontend + Backend + Website)
+- **Components Created**: 20+ reusable components (Mobile App + Website)
+- **Mobile App Components**: HeroWelcome, PrimaryActionButton, TodayActivityCard, TodayMealsGrid, QuickActionsGrid, MotivationBanner, StreakTracker, MealCard, MealTypePicker, TimePickerButton, DatePickerButton, AnimatedToggle, and more
 - **Website Components**: Hero, Features, How It Works, Download, Footer, About sections
 - **API Endpoints**: 20+ RESTful endpoints
-- **Database Models**: 4 (User, Meal, Reminder, Settings)
+- **Database Models**: 4 (User, Meal with time field, Reminder, Settings)
 - **Cloud Services**: MongoDB Atlas (Database), Cloudinary (Image CDN), Vercel (Serverless API + Website)
 - **Cross-Device Features**: Multi-platform authentication, real-time sync, secure data access
+- **UI/UX Redesigns**: Complete redesigns of Home, Profile, Reminders, Add Meal, and Timeline screens
 - **Test Coverage**: Integration tests for critical flows
 - **Platforms Supported**: iOS, Android, Web (Mobile App + Marketing Website)
 - **Deployment**: Production-ready on Vercel (API + Website)
 - **Cloud Storage**: 100% data stored securely in cloud with automatic backups
+- **App Branding**: Fully rebranded as "Melo" across all platforms
 
 ## Future Enhancements
 
@@ -380,4 +407,13 @@ MealLogger addresses these pain points through:
 
 ---
 
-**This project demonstrates proficiency in modern full-stack development, mobile application development, web development with Next.js, API design, cloud services integration, and production deployment. It showcases the ability to identify user problems, design solutions, and implement scalable, maintainable code with robust cloud-based data persistence. The project includes both a production-ready mobile application and a modern marketing website built with Next.js, featuring smooth animations, responsive design, and intuitive navigation. The system ensures users never lose their data - all meals, streaks, and progress are securely stored in the cloud and accessible from any device. Users can seamlessly log in from their phone, tablet, or web browser to access their complete meal history, with real-time synchronization ensuring data consistency across all platforms.**
+**This project demonstrates proficiency in modern full-stack development, mobile application development, web development with Next.js, API design, cloud services integration, and production deployment. It showcases the ability to identify user problems, design solutions, and implement scalable, maintainable code with robust cloud-based data persistence. The project includes both a production-ready mobile application and a modern marketing website built with Next.js, featuring smooth animations, responsive design, and intuitive navigation.**
+
+**Recent Enhancements:**
+- **Complete UI/UX Redesign**: Redesigned Home screen from scratch with modern hero section, card-based layouts, and smooth animations
+- **Time Selection**: Added native date/time pickers with smart default times based on meal type
+- **App Rebranding**: Complete rebrand from "MealLogger" to "Melo" across mobile app, website, and all configurations
+- **Enhanced Animations**: Implemented React Native Reanimated for smooth 60fps animations throughout the app
+- **Modern Design System**: Consistent card-based layouts, spacing, typography, and micro-interactions across all screens
+
+**The system ensures users never lose their data - all meals, streaks, and progress are securely stored in the cloud and accessible from any device. Users can seamlessly log in from their phone, tablet, or web browser to access their complete meal history, with real-time synchronization ensuring data consistency across all platforms.**

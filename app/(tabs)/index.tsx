@@ -10,12 +10,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
 import LoadingScreen from '../components/LoadingScreen';
-import GreetingHeader from '../components/GreetingHeader';
+import HeroWelcome from '../components/HeroWelcome';
 import MotivationBanner from '../components/MotivationBanner';
-import QuickActions from '../components/QuickActions';
-import StreakTracker from '../components/StreakTracker';
-import TodayMealsPreview from '../components/TodayMealsPreview';
-import TodaySummary from '../components/TodaySummary';
+import PrimaryActionButton from '../components/PrimaryActionButton';
+import TodayActivityCard from '../components/TodayActivityCard';
+import TodayMealsGrid from '../components/TodayMealsGrid';
+import QuickActionsGrid from '../components/QuickActionsGrid';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -161,7 +161,7 @@ export default function Dashboard() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ 
-          paddingBottom: Math.max(insets.bottom, 24),
+          paddingBottom: Math.max(insets.bottom, 32),
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -172,10 +172,8 @@ export default function Dashboard() {
           />
         }
       >
-        <GreetingHeader />
-
-        <StreakTracker 
-          streak={stats.streak} 
+        <HeroWelcome 
+          streak={stats.streak}
           todayMeals={stats.todayMeals}
         />
 
@@ -184,18 +182,17 @@ export default function Dashboard() {
           todayMeals={stats.todayMeals}
         />
 
-        <QuickActions />
+        <PrimaryActionButton />
 
-        <TodayMealsPreview 
-          meals={todayMeals}
-          onViewAll={() => router.push('./timeline')}
-        />
-
-        <TodaySummary
+        <TodayActivityCard
           todayMeals={stats.todayMeals}
           todayCalories={stats.todayCalories}
           remindersActive={stats.remindersActive}
         />
+
+        <TodayMealsGrid meals={todayMeals} />
+
+        <QuickActionsGrid />
       </ScrollView>
     </View>
   );

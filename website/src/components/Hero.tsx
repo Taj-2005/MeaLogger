@@ -185,7 +185,7 @@ export default function Hero() {
                       {/* Screen Content */}
                       <div className="aspect-[9/20] bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
                         <Image
-                          src="/homescreen.jpeg"
+                          src="/homescreen.jpg"
                           alt="Melo App Screenshot"
                           fill
                           className="object-contain"
