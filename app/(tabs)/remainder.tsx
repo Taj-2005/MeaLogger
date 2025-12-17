@@ -1,31 +1,110 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    Alert,
-    Platform,
-    ScrollView,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import Animated, {
+  Easing,
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
+import AnimatedInput from '../components/AnimatedInput';
+import AnimatedToggle from '../components/AnimatedToggle';
 import LoadingScreen from '../components/LoadingScreen';
-import {
-    cancelReminderNotification,
-    checkNotificationPermissions,
-    requestNotificationPermissions,
-    rescheduleAllReminders,
-    scheduleReminderNotification,
-} from '../../utils/notifications';
-import AppLogo from '../components/AppLogo';
 import PrimaryButton from '../components/PrimaryButton';
+import {
+  cancelReminderNotification,
+  checkNotificationPermissions,
+  requestNotificationPermissions,
+  rescheduleAllReminders,
+  scheduleReminderNotification,
+} from '../../utils/notifications';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// Time Picker Button Component
+const TimePickerButton: React.FC<{
+  time: Date;
+  formatTime: (hour: number, minute: number) => string;
+  onPress: () => void;
+  colors: any;
+}> = ({ time, formatTime, onPress, colors }) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, {
+      damping: 15,
+      stiffness: 400,
+    });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, {
+      damping: 15,
+      stiffness: 400,
+    });
+  };
+
+  return (
+    <View style={styles.timePickerContainer}>
+      <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+        Time
+      </Text>
+      <AnimatedPressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={styles.timePickerButton}
+      >
+        <Animated.View
+          style={[
+            styles.timePickerButtonInner,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+            },
+            animatedStyle,
+          ]}
+        >
+          <Ionicons
+            name="time-outline"
+            size={20}
+            color={colors.primary}
+            style={styles.timePickerIcon}
+          />
+          <Text style={[styles.timePickerText, { color: colors.textPrimary }]}>
+            {formatTime(time.getHours(), time.getMinutes())}
+          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={colors.textSecondary}
+          />
+        </Animated.View>
+      </AnimatedPressable>
+    </View>
+  );
+};
 
 type Reminder = {
   _id: string;
@@ -132,7 +211,10 @@ export default function RemindersScreen() {
   };
 
   const handleDeleteReminder = async (id: string) => {
-    const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.confirm === 'function';
+    const isWeb =
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      typeof window.confirm === 'function';
     const confirmed = isWeb
       ? window.confirm('Are you sure you want to delete this reminder?')
       : await new Promise<boolean>((resolve) => {
@@ -160,10 +242,10 @@ export default function RemindersScreen() {
   const handleToggleReminder = async (reminder: Reminder) => {
     try {
       const newEnabledState = !reminder.enabled;
-      
+
       // Optimistic update: update UI immediately
-      setReminders(prevReminders =>
-        prevReminders.map(r =>
+      setReminders((prevReminders) =>
+        prevReminders.map((r) =>
           r._id === reminder._id ? { ...r, enabled: newEnabledState } : r
         )
       );
@@ -190,8 +272,8 @@ export default function RemindersScreen() {
       await loadReminders(false);
     } catch (error: any) {
       // Revert optimistic update on error
-      setReminders(prevReminders =>
-        prevReminders.map(r =>
+      setReminders((prevReminders) =>
+        prevReminders.map((r) =>
           r._id === reminder._id ? { ...r, enabled: reminder.enabled } : r
         )
       );
@@ -232,158 +314,107 @@ export default function RemindersScreen() {
   }
 
   return (
-    <View
-      className="flex-1"
-      style={{ backgroundColor: colors.background }}
-    >
-      {/* Header */}
-      <View
-        className="pb-6 px-6"
-        style={{ 
-          backgroundColor: colors.surface,
-          paddingTop: insets.top + 20,
-        }}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header with Gradient */}
+      <Animated.View
+        entering={FadeInDown.duration(400).springify()}
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 16,
+            backgroundColor: colors.surface,
+          },
+        ]}
       >
-        <View className="mb-4 flex-row items-center">
-          <AppLogo size={32} style={{ marginRight: 12 }} />
-          <Text
-            className="text-2xl font-bold"
-            style={{ color: colors.textPrimary }}
-          >
-            Reminders
-          </Text>
+        <LinearGradient
+          colors={[
+            `${colors.primary}08`,
+            `${colors.accent}05`,
+            'transparent',
+          ]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+              Reminders
+            </Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              Never miss a meal
+            </Text>
+          </View>
         </View>
-      </View>
+      </Animated.View>
 
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ padding: 20 }}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 24) + 80 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Add Reminder Form */}
-        <View
-          className="rounded-2xl p-6 mb-6"
-          style={{
-            backgroundColor: colors.surface,
-            shadowColor: colors.shadow,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
-          }}
+        <Animated.View
+          entering={FadeInUp.delay(100).duration(500).easing(Easing.out(Easing.ease)).springify()}
+          style={styles.section}
         >
-          <Text
-            className="text-lg font-bold mb-4"
-            style={{ color: colors.textPrimary }}
-          >
-            Add New Reminder
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+            Create Reminder
           </Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <AnimatedInput
+              label="Reminder Title"
+              icon="notifications-outline"
+              value={title}
+              onChangeText={setTitle}
+              placeholder="e.g., Breakfast Time"
+              delay={0}
+            />
 
-          {/* Title Input */}
-          <View className="mb-4">
-            <Text
-              className="text-sm font-semibold mb-2"
-              style={{ color: colors.textPrimary }}
-            >
-              Reminder Title *
-            </Text>
-            <View
-              className="rounded-xl px-4 py-3.5 flex-row items-center"
-              style={{
-                backgroundColor: colors.background,
-                borderWidth: 1,
-                borderColor: colors.border,
-              }}
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={{ marginRight: 12 }}
-              />
-              <TextInput
-                placeholder="e.g., Breakfast Time"
-                placeholderTextColor={colors.textSecondary}
-                value={title}
-                onChangeText={setTitle}
-                className="flex-1 text-base"
-                style={{ color: colors.textPrimary }}
-              />
-            </View>
-          </View>
-
-          {/* Meal Type Picker */}
-          <View className="mb-4">
-            <Text
-              className="text-sm font-semibold mb-2"
-              style={{ color: colors.textPrimary }}
-            >
-              Meal Type
-            </Text>
-            <View
-              className="rounded-xl overflow-hidden py-4 px-2"
-              style={{
-                backgroundColor: colors.background,
-                borderWidth: 1,
-                borderColor: colors.border,
-              }}
-            >
-              <Picker
-                selectedValue={mealType}
-                onValueChange={setMealType}
-                style={{
-                  color: colors.textPrimary,
-                  backgroundColor: 'transparent',
-                }}
-              >
-                {MEAL_TYPES.map((type) => (
-                  <Picker.Item
-                    key={type}
-                    label={type}
-                    value={type}
-                    color={colors.textPrimary}
-                  />
-                ))}
-              </Picker>
-            </View>
-          </View>
-
-          {/* Time Picker */}
-          <View className="mb-6">
-            <Text
-              className="text-sm font-semibold mb-2"
-              style={{ color: colors.textPrimary }}
-            >
-              Time
-            </Text>
-            <TouchableOpacity
-              onPress={() => setShowTimePicker(true)}
-              activeOpacity={0.7}
-              className="rounded-xl px-4 py-3.5 flex-row items-center"
-              style={{
-                backgroundColor: colors.background,
-                borderWidth: 1,
-                borderColor: colors.border,
-              }}
-            >
-              <Ionicons
-                name="time-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={{ marginRight: 12 }}
-              />
-              <Text
-                className="text-base flex-1"
-                style={{ color: colors.textPrimary }}
-              >
-                {formatTime(time.getHours(), time.getMinutes())}
+            {/* Meal Type Picker */}
+            <View style={styles.pickerContainer}>
+              <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                Meal Type
               </Text>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
+              <View
+                style={[
+                  styles.pickerWrapper,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Picker
+                  selectedValue={mealType}
+                  onValueChange={setMealType}
+                  style={{
+                    color: colors.textPrimary,
+                    backgroundColor: 'transparent',
+                  }}
+                >
+                  {MEAL_TYPES.map((type) => (
+                    <Picker.Item
+                      key={type}
+                      label={type}
+                      value={type}
+                      color={colors.textPrimary}
+                    />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+
+            {/* Time Picker */}
+            <TimePickerButton
+              time={time}
+              formatTime={formatTime}
+              onPress={() => setShowTimePicker(true)}
+              colors={colors}
+            />
 
             {showTimePicker && (
               <DateTimePicker
@@ -396,133 +427,469 @@ export default function RemindersScreen() {
             )}
           </View>
 
-          {/* Add Button */}
-          <PrimaryButton
-            title="Add Reminder"
-            onPress={handleAddReminder}
-            loading={isAdding}
-            disabled={isAdding || !title.trim()}
-            variant="primary"
-          />
-        </View>
+            {/* Add Button */}
+            <View style={styles.addButtonContainer}>
+              <PrimaryButton
+                title="Add Reminder"
+                onPress={handleAddReminder}
+                loading={isAdding}
+                disabled={isAdding || !title.trim()}
+                variant="primary"
+              />
+            </View>
+        </Animated.View>
 
         {/* Reminders List */}
-        <View className="mb-6">
-          <Text
-            className="text-lg font-bold mb-4"
-            style={{ color: colors.textPrimary }}
-          >
-            Your Reminders ({reminders.length})
-          </Text>
-
-          {reminders.length === 0 ? (
+        <Animated.View
+          entering={FadeInDown.delay(200).duration(400).springify()}
+          style={styles.section}
+        >
+          <View style={styles.listHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+              Your Reminders
+            </Text>
             <View
-              className="rounded-2xl p-8 items-center"
-              style={{ backgroundColor: colors.surface }}
+              style={[
+                styles.countBadge,
+                { backgroundColor: `${colors.primary}15` },
+              ]}
             >
-              <Ionicons name="notifications-outline" size={64} color={colors.primary} style={{ marginBottom: 16 }} />
-              <Text
-                className="text-base font-semibold mb-2 text-center"
-                style={{ color: colors.textPrimary }}
-              >
-                No reminders yet
-              </Text>
-              <Text
-                className="text-sm text-center"
-                style={{ color: colors.textSecondary }}
-              >
-                Add a reminder above to get notified about your meals
+              <Text style={[styles.countText, { color: colors.primary }]}>
+                {reminders.length}
               </Text>
             </View>
-          ) : (
-            reminders.map((reminder) => (
+          </View>
+
+          {reminders.length === 0 ? (
+            <Animated.View
+              entering={FadeInDown.delay(250).duration(400).springify()}
+              style={[styles.emptyState, { backgroundColor: colors.surface }]}
+            >
               <View
-                key={reminder._id}
-                className="rounded-2xl p-4 mb-3 flex-row items-center justify-between"
-                style={{
-                  backgroundColor: colors.surface,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                }}
+                style={[
+                  styles.emptyStateIcon,
+                  { backgroundColor: `${colors.primary}15` },
+                ]}
               >
-                <View className="flex-1 flex-row items-center">
-                  <View
-                    className="w-12 h-12 rounded-xl items-center justify-center mr-4"
-                    style={{ backgroundColor: `${colors.primary}15` }}
-                  >
-                    <Ionicons 
-                      name={getMealTypeIcon(reminder.mealType)} 
-                      size={24} 
-                      color={colors.primary} 
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <Text
-                      className="text-base font-semibold mb-1"
-                      style={{ color: colors.textPrimary }}
-                    >
-                      {reminder.title}
-                    </Text>
-                    <View className="flex-row items-center">
-                      <Text
-                        className="text-sm mr-2"
-                        style={{ color: colors.textSecondary }}
-                      >
-                        {reminder.mealType
-                          ? `${reminder.mealType} • `
-                          : ''}
-                        {formatTime(reminder.hour, reminder.minute)}
-                      </Text>
-                      <View
-                        className="px-2 py-0.5 rounded"
-                        style={{
-                          backgroundColor: reminder.enabled
-                            ? `${colors.success}15`
-                            : `${colors.textSecondary}15`,
-                        }}
-                      >
-                        <Text
-                          className="text-xs font-semibold"
-                          style={{
-                            color: reminder.enabled
-                              ? colors.success
-                              : colors.textSecondary,
-                          }}
-                        >
-                          {reminder.enabled ? 'Active' : 'Disabled'}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-                <View className="flex-row items-center">
-                  <Switch
-                    value={reminder.enabled}
-                    onValueChange={() => handleToggleReminder(reminder)}
-                    trackColor={{
-                      false: colors.border,
-                      true: colors.success,
-                    }}
-                    thumbColor="#FFFFFF"
-                    style={{ marginRight: 12 }}
-                  />
-                  <TouchableOpacity
-                    onPress={() => handleDeleteReminder(reminder._id)}
-                    className="p-2"
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name="trash-outline"
-                      size={22}
-                      color={colors.error}
-                    />
-                  </TouchableOpacity>
-                </View>
+                <Ionicons
+                  name="notifications-outline"
+                  size={48}
+                  color={colors.primary}
+                />
               </View>
+              <Text style={[styles.emptyStateTitle, { color: colors.textPrimary }]}>
+                No reminders yet
+              </Text>
+              <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
+                Add a reminder above to get notified about your meals
+              </Text>
+            </Animated.View>
+          ) : (
+            reminders.map((reminder, index) => (
+              <ReminderCard
+                key={reminder._id}
+                reminder={reminder}
+                onToggle={() => handleToggleReminder(reminder)}
+                onDelete={() => handleDeleteReminder(reminder._id)}
+                getMealTypeIcon={getMealTypeIcon}
+                formatTime={formatTime}
+                colors={colors}
+                delay={250 + index * 50}
+              />
             ))
           )}
-        </View>
+        </Animated.View>
       </ScrollView>
     </View>
   );
 }
+
+// Reminder Card Component
+interface ReminderCardProps {
+  reminder: Reminder;
+  onToggle: () => void;
+  onDelete: () => void;
+  getMealTypeIcon: (type?: string) => keyof typeof Ionicons.glyphMap;
+  formatTime: (hour: number, minute: number) => string;
+  colors: any;
+  delay: number;
+}
+
+const ReminderCard: React.FC<ReminderCardProps> = ({
+  reminder,
+  onToggle,
+  onDelete,
+  getMealTypeIcon,
+  formatTime,
+  colors,
+  delay,
+}) => {
+  const scale = useSharedValue(1);
+  const deleteScale = useSharedValue(1);
+
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const deleteAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: deleteScale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, {
+      damping: 15,
+      stiffness: 400,
+    });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, {
+      damping: 15,
+      stiffness: 400,
+    });
+  };
+
+  const handleDeletePressIn = () => {
+    deleteScale.value = withSpring(0.9, {
+      damping: 15,
+      stiffness: 400,
+    });
+  };
+
+  const handleDeletePressOut = () => {
+    deleteScale.value = withSpring(1, {
+      damping: 15,
+      stiffness: 400,
+    });
+  };
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(delay).duration(400).springify()}
+      style={styles.reminderCardContainer}
+    >
+      <AnimatedPressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[cardAnimatedStyle]}
+      >
+        <View
+          style={[
+            styles.reminderCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: reminder.enabled ? colors.primary : colors.border,
+            },
+          ]}
+        >
+          <View style={styles.reminderCardContent}>
+            <View
+              style={[
+                styles.reminderIconContainer,
+                {
+                  backgroundColor: reminder.enabled
+                    ? `${colors.primary}15`
+                    : `${colors.textSecondary}10`,
+                },
+              ]}
+            >
+              <Ionicons
+                name={getMealTypeIcon(reminder.mealType)}
+                size={24}
+                color={reminder.enabled ? colors.primary : colors.textSecondary}
+              />
+            </View>
+
+            <View style={styles.reminderInfo}>
+              <Text
+                style={[
+                  styles.reminderTitle,
+                  {
+                    color: reminder.enabled
+                      ? colors.textPrimary
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                {reminder.title}
+              </Text>
+              <View style={styles.reminderMeta}>
+                <Text
+                  style={[
+                    styles.reminderTime,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  {reminder.mealType
+                    ? `${reminder.mealType} • `
+                    : ''}
+                  {formatTime(reminder.hour, reminder.minute)}
+                </Text>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    {
+                      backgroundColor: reminder.enabled
+                        ? `${colors.success}15`
+                        : `${colors.textSecondary}15`,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusText,
+                      {
+                        color: reminder.enabled
+                          ? colors.success
+                          : colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {reminder.enabled ? 'Active' : 'Disabled'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.reminderActions}>
+              <AnimatedToggle
+                value={reminder.enabled}
+                onValueChange={onToggle}
+              />
+              <AnimatedPressable
+                onPress={onDelete}
+                onPressIn={handleDeletePressIn}
+                onPressOut={handleDeletePressOut}
+                style={[styles.deleteButton, deleteAnimatedStyle]}
+              >
+                <View
+                  style={[
+                    styles.deleteButtonInner,
+                    { backgroundColor: `${colors.error}15` },
+                  ]}
+                >
+                  <Ionicons name="trash-outline" size={18} color={colors.error} />
+                </View>
+              </AnimatedPressable>
+            </View>
+          </View>
+        </View>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    overflow: 'hidden',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 15,
+    fontWeight: '400',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  card: {
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  pickerContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  pickerWrapper: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  timePickerContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  timePickerButton: {
+    marginTop: 8,
+  },
+  timePickerButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  timePickerIcon: {
+    marginRight: 12,
+  },
+  timePickerText: {
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+  },
+  addButtonContainer: {
+    marginTop: 8,
+  },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  countBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  countText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  emptyState: {
+    borderRadius: 20,
+    padding: 40,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  emptyStateIcon: {
+    width: 96,
+    height: 96,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateText: {
+    fontSize: 14,
+    fontWeight: '400',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  reminderCardContainer: {
+    marginBottom: 12,
+  },
+  reminderCard: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  reminderCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reminderIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  reminderInfo: {
+    flex: 1,
+  },
+  reminderTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  reminderMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  reminderTime: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  reminderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginLeft: 8,
+  },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButtonInner: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

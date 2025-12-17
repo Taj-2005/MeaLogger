@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -25,16 +26,21 @@ const AnimatedToggle: React.FC<AnimatedToggleProps> = ({
   const scale = useSharedValue(1);
 
   useEffect(() => {
-    translateX.value = withSpring(value ? 1 : 0, {
-      damping: 20,
-      stiffness: 300,
-      mass: 0.8,
+    translateX.value = withTiming(value ? 1 : 0, {
+      duration: 150,
+      easing: Easing.out(Easing.ease),
     });
   }, [value]);
 
   const trackStyle = useAnimatedStyle(() => {
     return {
-      backgroundColor: value ? colors.primary : colors.border,
+      backgroundColor: withTiming(
+        value ? colors.primary : colors.border,
+        {
+          duration: 150,
+          easing: Easing.out(Easing.ease),
+        }
+      ),
     };
   });
 
@@ -61,17 +67,17 @@ const AnimatedToggle: React.FC<AnimatedToggleProps> = ({
   const handlePress = () => {
     if (disabled) return;
 
-    // Haptic feedback
-    scale.value = withSpring(0.9, {
-      damping: 15,
-      stiffness: 400,
+    // Quick press feedback
+    scale.value = withTiming(0.92, {
+      duration: 80,
+      easing: Easing.out(Easing.ease),
     });
     setTimeout(() => {
-      scale.value = withSpring(1, {
-        damping: 15,
-        stiffness: 400,
+      scale.value = withTiming(1, {
+        duration: 100,
+        easing: Easing.out(Easing.ease),
       });
-    }, 100);
+    }, 50);
 
     onValueChange(!value);
   };
