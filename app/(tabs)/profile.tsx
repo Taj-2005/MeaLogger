@@ -1,27 +1,38 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import Animated, {
+  Easing,
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
-import AppLogo from '../components/AppLogo';
+import AnimatedInput from '../components/AnimatedInput';
 import PrimaryButton from '../components/PrimaryButton';
-import SettingsButton from '../components/SettingsBtn';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function Profile() {
-  const { user, logout, refreshUser } = useAuth();
+  const router = useRouter();
+  const { user, refreshUser } = useAuth();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -91,28 +102,6 @@ export default function Profile() {
     }
   };
 
-  const handleLogout = async () => {
-    const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.confirm === 'function';
-    const confirmed = isWeb
-      ? window.confirm('Are you sure you want to logout?')
-      : await new Promise<boolean>((resolve) => {
-          Alert.alert('Logout', 'Are you sure you want to logout?', [
-            { text: 'Cancel', onPress: () => resolve(false), style: 'cancel' },
-            { text: 'Logout', onPress: () => resolve(true), style: 'destructive' },
-          ]);
-        });
-
-    if (confirmed) {
-      setLoading(true);
-      try {
-        await logout();
-      } catch (e) {
-        Alert.alert('Error', 'Failed to logout. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
 
   const avatarText = user?.name
     ? user.name
@@ -123,236 +112,414 @@ export default function Profile() {
         .substring(0, 2)
     : 'U';
 
+  // Avatar animation
+  const avatarScale = useSharedValue(1);
+  const avatarAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: avatarScale.value }],
+  }));
+
+  useEffect(() => {
+    avatarScale.value = withSpring(1, {
+      damping: 15,
+      stiffness: 300,
+    });
+  }, [avatarUrl]);
+
+  const handleAvatarPress = () => {
+    avatarScale.value = withSpring(0.95, {
+      damping: 15,
+      stiffness: 400,
+    });
+    setTimeout(() => {
+      avatarScale.value = withSpring(1, {
+        damping: 15,
+        stiffness: 400,
+      });
+      handleAvatarUpdate();
+    }, 100);
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      className="flex-1"
-      style={{ backgroundColor: colors.background }}
+      style={[styles.container, { backgroundColor: colors.background }]}
     >
-      {/* Header */}
-      <View
-        className="pb-6 px-6 flex-row items-center justify-between"
-        style={{ 
-          backgroundColor: colors.surface,
-          paddingTop: insets.top + 20,
-        }}
+      {/* Header with Gradient */}
+      <Animated.View
+        entering={FadeInDown.duration(400).springify()}
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 16,
+            backgroundColor: colors.surface,
+          },
+        ]}
       >
-        <View className="flex-row items-center">
-          <AppLogo size={32} style={{ marginRight: 12 }} />
-          <Text
-            className="text-2xl font-bold"
-            style={{ color: colors.textPrimary }}
-          >
+        <LinearGradient
+          colors={[
+            `${colors.primary}08`,
+            `${colors.accent}05`,
+            'transparent',
+          ]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={styles.headerContent}>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
             Profile
           </Text>
+          <Pressable
+            onPress={() => router.push('/(tabs)/settings')}
+            style={styles.settingsButton}
+          >
+            <View
+              style={[
+                styles.settingsButtonInner,
+                { backgroundColor: `${colors.primary}15` },
+              ]}
+            >
+              <Ionicons name="settings-outline" size={22} color={colors.primary} />
+            </View>
+          </Pressable>
         </View>
-        <SettingsButton />
-      </View>
+      </Animated.View>
 
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ padding: 24 }}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 24) + 80 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Avatar Section */}
-        <View className="items-center mb-8">
-          <TouchableOpacity
-            onPress={handleAvatarUpdate}
-            activeOpacity={0.8}
-            className="relative"
-          >
-            {avatarUrl ? (
-              <View
-                className="w-28 h-28 rounded-full overflow-hidden border-4"
-                style={{ borderColor: colors.primary }}
-              >
-                <Image
-                  source={{ uri: avatarUrl }}
-                  className="w-full h-full"
-                  resizeMode="cover"
-                />
-              </View>
-            ) : (
-              <View
-                className="w-28 h-28 rounded-full items-center justify-center"
-                style={{ backgroundColor: colors.primary }}
-              >
-                <Text
-                  className="text-4xl font-bold"
-                  style={{ color: '#FFFFFF' }}
-                >
-                  {avatarText}
-                </Text>
-              </View>
-            )}
-            <View
-              className="absolute bottom-0 right-0 w-10 h-10 rounded-full items-center justify-center border-4"
-              style={{
-                backgroundColor: colors.surface,
-                borderColor: colors.surface,
-              }}
-            >
-              <Ionicons name="camera" size={20} color={colors.primary} />
-            </View>
-          </TouchableOpacity>
-          <Text
-            className="text-xl font-bold mt-4"
-            style={{ color: colors.textPrimary }}
-          >
-            {user?.name || 'Your Profile'}
-          </Text>
-          <Text
-            className="text-sm mt-1"
-            style={{ color: colors.textSecondary }}
-          >
-            {user?.email || ''}
-          </Text>
-        </View>
-
-        {/* Form Section */}
-        <View
-          className="rounded-2xl p-6 mb-6"
-          style={{
-            backgroundColor: colors.surface,
-            shadowColor: colors.shadow,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
-          }}
+        {/* Profile Header Card */}
+        <Animated.View
+          entering={FadeInUp.delay(100).duration(500).easing(Easing.out(Easing.ease)).springify()}
+          style={[styles.profileHeaderCard, { backgroundColor: colors.surface }]}
         >
-          {/* Name Input */}
-          <View className="mb-4">
-            <Text
-              className="text-sm font-semibold mb-2"
-              style={{ color: colors.textPrimary }}
-            >
-              Full Name
-            </Text>
-            <View
-              className="rounded-xl px-4 py-3.5 flex-row items-center"
-              style={{
-                backgroundColor: colors.background,
-                borderWidth: 1,
-                borderColor: error && !name ? colors.error : colors.border,
-              }}
-            >
-              <Ionicons
-                name="person-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={{ marginRight: 12 }}
-              />
-              <TextInput
-                value={name}
-                onChangeText={(text) => {
-                  setName(text);
-                  setChanged(true);
-                  setError('');
-                  setSuccess('');
-                }}
-                placeholder="Enter your name"
-                placeholderTextColor={colors.textSecondary}
-                className="flex-1 text-base"
-                style={{ color: colors.textPrimary }}
-              />
-            </View>
-          </View>
-
-          {/* Email (read-only) */}
-          <View className="mb-6">
-            <Text
-              className="text-sm font-semibold mb-2"
-              style={{ color: colors.textPrimary }}
-            >
-              Email
-            </Text>
-            <View
-              className="rounded-xl px-4 py-3.5 flex-row items-center opacity-60"
-              style={{
-                backgroundColor: colors.background,
-                borderWidth: 1,
-                borderColor: colors.border,
-              }}
-            >
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={{ marginRight: 12 }}
-              />
-              <Text
-                className="flex-1 text-base"
-                style={{ color: colors.textPrimary }}
-              >
-                {email}
-              </Text>
-            </View>
-            <Text
-              className="text-xs mt-1"
-              style={{ color: colors.textSecondary }}
-            >
-              Email cannot be changed
-            </Text>
-          </View>
-
-          {/* Status Messages */}
-          {error ? (
-            <View
-              className="rounded-xl px-4 py-3 mb-4 flex-row items-center"
-              style={{ backgroundColor: `${colors.error}15` }}
-            >
-              <Ionicons
-                name="alert-circle"
-                size={18}
-                color={colors.error}
-                style={{ marginRight: 8 }}
-              />
-              <Text className="text-sm flex-1" style={{ color: colors.error }}>
-                {error}
-              </Text>
-            </View>
-          ) : null}
-
-          {success ? (
-            <View
-              className="rounded-xl px-4 py-3 mb-4 flex-row items-center"
-              style={{ backgroundColor: `${colors.success}15` }}
-            >
-              <Ionicons
-                name="checkmark-circle"
-                size={18}
-                color={colors.success}
-                style={{ marginRight: 8 }}
-              />
-              <Text
-                className="text-sm flex-1"
-                style={{ color: colors.success }}
-              >
-                {success}
-              </Text>
-            </View>
-          ) : null}
-
-          {/* Update Button */}
-          <PrimaryButton
-            title="Update Profile"
-            onPress={handleUpdateProfile}
-            loading={loading}
-            disabled={!changed || loading}
-            variant="primary"
+          <LinearGradient
+            colors={[
+              `${colors.primary}10`,
+              `${colors.accent}08`,
+              'transparent',
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.profileGradient}
           />
-        </View>
 
-        {/* Logout Button */}
-        <PrimaryButton
-          title="Log Out"
-          onPress={handleLogout}
-          loading={loading}
-          disabled={loading}
-          variant="error"
-        />
+          {/* Avatar */}
+          <Animated.View style={avatarAnimatedStyle}>
+            <AnimatedPressable
+              onPress={handleAvatarPress}
+              style={styles.avatarContainer}
+            >
+              {avatarUrl ? (
+                <View
+                  style={[
+                    styles.avatarImageWrapper,
+                    { borderColor: colors.primary },
+                  ]}
+                >
+                  <Image
+                    source={{ uri: avatarUrl }}
+                    style={styles.avatarImage}
+                    resizeMode="cover"
+                  />
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.avatarPlaceholder,
+                    { backgroundColor: colors.primary },
+                  ]}
+                >
+                  <Text style={styles.avatarText}>{avatarText}</Text>
+                </View>
+              )}
+              <View
+                style={[
+                  styles.avatarEditBadge,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.surface,
+                  },
+                ]}
+              >
+                <Ionicons name="camera" size={18} color={colors.primary} />
+              </View>
+            </AnimatedPressable>
+          </Animated.View>
+
+          {/* User Info */}
+          <Animated.View
+            entering={FadeInDown.delay(150).duration(400).springify()}
+            style={styles.userInfo}
+          >
+            <Text style={[styles.userName, { color: colors.textPrimary }]}>
+              {user?.name || 'Your Profile'}
+            </Text>
+            <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
+              {user?.email || ''}
+            </Text>
+          </Animated.View>
+        </Animated.View>
+
+        {/* Profile Information Section */}
+        <Animated.View
+          entering={FadeInDown.delay(200).duration(400).springify()}
+          style={styles.section}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+            Profile Information
+          </Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <AnimatedInput
+              label="Full Name"
+              icon="person-outline"
+              value={name}
+              onChangeText={(text) => {
+                setName(text);
+                setChanged(true);
+                setError('');
+                setSuccess('');
+              }}
+              placeholder="Enter your name"
+              error={!!error && !name}
+              delay={0}
+            />
+
+            {/* Email (Read-only) */}
+            <View style={styles.emailContainer}>
+              <AnimatedInput
+                label="Email"
+                icon="mail-outline"
+                value={email}
+                editable={false}
+                delay={50}
+              />
+              <Text style={[styles.emailHint, { color: colors.textSecondary }]}>
+                Email cannot be changed
+              </Text>
+            </View>
+
+            {/* Status Messages */}
+            {error ? (
+              <Animated.View
+                entering={FadeInDown.duration(300)}
+                style={[styles.messageContainer, { backgroundColor: `${colors.error}15` }]}
+              >
+                <Ionicons
+                  name="alert-circle"
+                  size={18}
+                  color={colors.error}
+                  style={styles.messageIcon}
+                />
+                <Text style={[styles.messageText, { color: colors.error }]}>
+                  {error}
+                </Text>
+              </Animated.View>
+            ) : null}
+
+            {success ? (
+              <Animated.View
+                entering={FadeInDown.duration(300)}
+                style={[styles.messageContainer, { backgroundColor: `${colors.success}15` }]}
+              >
+                <Ionicons
+                  name="checkmark-circle"
+                  size={18}
+                  color={colors.success}
+                  style={styles.messageIcon}
+                />
+                <Text style={[styles.messageText, { color: colors.success }]}>
+                  {success}
+                </Text>
+              </Animated.View>
+            ) : null}
+
+            {/* Update Button */}
+            <View style={styles.updateButtonContainer}>
+              <PrimaryButton
+                title="Update Profile"
+                onPress={handleUpdateProfile}
+                loading={loading}
+                disabled={!changed || loading}
+                variant="primary"
+              />
+            </View>
+          </View>
+        </Animated.View>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    overflow: 'hidden',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  settingsButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsButtonInner: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  profileHeaderCard: {
+    borderRadius: 24,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    marginBottom: 32,
+    alignItems: 'center',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  profileGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  avatarContainer: {
+    marginBottom: 20,
+    position: 'relative',
+  },
+  avatarImageWrapper: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 48,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  userInfo: {
+    alignItems: 'center',
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 4,
+    letterSpacing: -0.5,
+  },
+  userEmail: {
+    fontSize: 15,
+    fontWeight: '400',
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  card: {
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  emailContainer: {
+    marginTop: 8,
+  },
+  emailHint: {
+    fontSize: 12,
+    fontWeight: '400',
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  messageIcon: {
+    marginRight: 10,
+  },
+  messageText: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  updateButtonContainer: {
+    marginTop: 20,
+  },
+  sectionContent: {
+    gap: 0,
+  },
+});
