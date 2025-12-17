@@ -37,7 +37,7 @@ export default function DownloadSection() {
             variants={fadeInUp}
             className="text-xl sm:text-2xl text-white/90 mb-12 max-w-2xl mx-auto"
           >
-            Download MealLogger APK and begin your journey to better eating
+            Download MeaLogger APK and begin your journey to better eating
             habits today.
           </motion.p>
 
@@ -94,7 +94,7 @@ export default function DownloadSection() {
               <li className="flex gap-3">
                 <span className="font-bold">4.</span>
                 <span>
-                  Launch MealLogger and start tracking your meals!
+                  Launch MeaLogger and start tracking your meals!
                 </span>
               </li>
             </ol>

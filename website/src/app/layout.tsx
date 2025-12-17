@@ -13,14 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MealLogger - Track Your Meals Effortlessly",
+  title: "MeaLogger - Track Your Meals Effortlessly",
   description:
-    "Photo-based meal tracking app with streak tracking, smart reminders, and beautiful timeline. Build consistent eating habits with MealLogger.",
+    "Photo-based meal tracking app with streak tracking, smart reminders, and beautiful timeline. Build consistent eating habits with MeaLogger.",
   keywords:
     "meal tracking, food diary, nutrition app, meal logger, health tracking, diet app, android app",
-  authors: [{ name: "MealLogger Team" }],
+  authors: [{ name: "MeaLogger Team" }],
   openGraph: {
-    title: "MealLogger - Track Your Meals Effortlessly",
+    title: "MeaLogger - Track Your Meals Effortlessly",
     description:
       "Photo-based meal tracking app with streak tracking and smart reminders.",
     type: "website",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MealLogger - Track Your Meals Effortlessly",
+    title: "MeaLogger - Track Your Meals Effortlessly",
     description:
       "Photo-based meal tracking app with streak tracking and smart reminders.",
   },

@@ -21,7 +21,7 @@ export default function AppLogo({
       className={className}
       resizeMode="contain"
       accessible
-      accessibilityLabel="MealLogger logo"
+      accessibilityLabel="MeaLogger logo"
     />
   );
 }

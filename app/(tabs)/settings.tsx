@@ -1,23 +1,87 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Modal,
-    Platform,
-    ScrollView,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import Animated, {
+  Easing,
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
-import { checkNotificationPermissions, requestNotificationPermissions } from '../../utils/notifications';
-import LoadingScreen from '../components/LoadingScreen';
+import {
+  checkNotificationPermissions,
+  requestNotificationPermissions,
+} from '../../utils/notifications';
+import AnimatedToggle from '../components/AnimatedToggle';
 import AppLogo from '../components/AppLogo';
+import LoadingScreen from '../components/LoadingScreen';
+import SettingRow from '../components/SettingRow';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// Modal Close Button Component
+const ModalCloseButton: React.FC<{ onPress: () => void; colors: any }> = ({
+  onPress,
+  colors,
+}) => {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.9, {
+      damping: 15,
+      stiffness: 400,
+    });
+    opacity.value = withSpring(0.7);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, {
+      damping: 15,
+      stiffness: 400,
+    });
+    opacity.value = withSpring(1);
+  };
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[styles.modalCloseButton, animatedStyle]}
+    >
+      <View
+        style={[
+          styles.modalCloseButtonInner,
+          { backgroundColor: '#F1F5F9' },
+        ]}
+      >
+        <Ionicons name="close" size={20} color={colors.textPrimary} />
+      </View>
+    </AnimatedPressable>
+  );
+};
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -82,13 +146,20 @@ const SettingsScreen = () => {
   };
 
   const handleLogout = () => {
-    const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.confirm === 'function';
+    const isWeb =
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      typeof window.confirm === 'function';
     const confirmed = isWeb
       ? window.confirm('Are you sure you want to logout?')
       : new Promise<boolean>((resolve) => {
           Alert.alert('Logout', 'Are you sure you want to logout?', [
             { text: 'Cancel', onPress: () => resolve(false), style: 'cancel' },
-            { text: 'Logout', onPress: () => resolve(true), style: 'destructive' },
+            {
+              text: 'Logout',
+              onPress: () => resolve(true),
+              style: 'destructive',
+            },
           ]);
         });
 
@@ -97,336 +168,636 @@ const SettingsScreen = () => {
     }
   };
 
-  const SettingItem = ({
-    icon,
-    title,
-    subtitle,
-    onPress,
-    rightComponent,
-    showArrow = true,
-  }: {
-    icon: keyof typeof Ionicons.glyphMap;
-    title: string;
-    subtitle?: string;
-    onPress?: () => void;
-    rightComponent?: React.ReactNode;
-    showArrow?: boolean;
-  }) => {
-    return (
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={0.7}
-        className="flex-row items-center justify-between py-4 px-4 rounded-xl mb-2"
-        style={{
-          backgroundColor: colors.surface,
-          borderWidth: 1,
-          borderColor: colors.border,
-        }}
-      >
-        <View className="flex-row items-center flex-1">
-          <View
-            className="w-10 h-10 rounded-xl items-center justify-center mr-3"
-            style={{ backgroundColor: `${colors.primary}15` }}
-          >
-            <Ionicons name={icon} size={22} color={colors.primary} />
-          </View>
-          <View className="flex-1">
-            <Text
-              className="text-base font-semibold"
-              style={{ color: colors.textPrimary }}
-            >
-              {title}
-            </Text>
-            {subtitle && (
-              <Text
-                className="text-sm mt-0.5"
-                style={{ color: colors.textSecondary }}
-              >
-                {subtitle}
-              </Text>
-            )}
-          </View>
-        </View>
-        <View className="flex-row items-center">
-          {rightComponent}
-          {showArrow && !rightComponent && (
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={colors.textSecondary}
-            />
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
   if (loading) {
     return <LoadingScreen message="Loading settings..." variant="minimal" />;
   }
 
   return (
-    <View
-      className="flex-1"
-      style={{ backgroundColor: colors.background }}
-    >
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View
-        className="pb-6 px-6 flex-row items-center"
-        style={{ 
-          backgroundColor: colors.surface,
-          paddingTop: insets.top + 20,
-        }}
+      <Animated.View
+        entering={FadeInDown.duration(400).springify()}
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.surface,
+            paddingTop: insets.top + 16,
+          },
+        ]}
       >
-        <AppLogo size={32} style={{ marginRight: 12 }} />
-        <Text
-          className="text-2xl font-bold"
-          style={{ color: colors.textPrimary }}
-        >
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
           Settings
         </Text>
-      </View>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+          Manage your preferences
+        </Text>
+      </Animated.View>
 
       <ScrollView
-        className="flex-1 px-6"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 24) + 80 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Account Section */}
-        <View className="mb-6 mt-6">
-          <Text
-            className="text-sm font-bold mb-4 uppercase tracking-wide"
-            style={{ color: colors.textSecondary }}
-          >
+        <Animated.View
+          entering={FadeInDown.delay(100).duration(400).springify()}
+          style={styles.section}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             Account
           </Text>
-          <SettingItem
-            icon="person-outline"
-            title="Profile"
-            subtitle="Manage your profile information"
-            onPress={() => router.push('/profile')}
-          />
-          <SettingItem
-            icon="notifications-outline"
-            title="Notifications"
-            subtitle={
-              Platform.OS === 'web'
-                ? 'Mobile only'
-                : settings?.notificationPermission
-                ? 'Enabled'
-                : 'Disabled'
-            }
-            rightComponent={
-              <Switch
-                value={Platform.OS !== 'web' && (settings?.notificationPermission || false)}
-                onValueChange={(value) =>
-                  updateSettings({ notificationPermission: value })
-                }
-                disabled={Platform.OS === 'web'}
-                trackColor={{
-                  false: colors.border,
-                  true: colors.primary,
-                }}
-                thumbColor="#FFFFFF"
-              />
-            }
-            showArrow={false}
-          />
-        </View>
+          <View style={styles.sectionContent}>
+            <SettingRow
+              icon="person-outline"
+              title="Profile"
+              subtitle="Manage your profile information"
+              onPress={() => router.push('/profile')}
+              delay={0}
+            />
+            <SettingRow
+              icon="notifications-outline"
+              title="Notifications"
+              subtitle={
+                Platform.OS === 'web'
+                  ? 'Mobile only'
+                  : settings?.notificationPermission
+                  ? 'Enabled'
+                  : 'Disabled'
+              }
+              rightComponent={
+                <AnimatedToggle
+                  value={
+                    Platform.OS !== 'web' &&
+                    (settings?.notificationPermission || false)
+                  }
+                  onValueChange={(value) =>
+                    updateSettings({ notificationPermission: value })
+                  }
+                  disabled={Platform.OS === 'web'}
+                />
+              }
+              showArrow={false}
+              delay={50}
+            />
+          </View>
+        </Animated.View>
 
         {/* Support Section */}
-        <View className="mb-6">
-          <Text
-            className="text-sm font-bold mb-4 uppercase tracking-wide"
-            style={{ color: colors.textSecondary }}
-          >
+        <Animated.View
+          entering={FadeInDown.delay(200).duration(400).springify()}
+          style={styles.section}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
             Support
           </Text>
-          <SettingItem
-            icon="help-circle-outline"
-            title="Help & Support"
-            subtitle="Get help or contact support"
-            onPress={() =>
-              Alert.alert('Help', 'Contact support at linkupcontact247@gmail.com')
-            }
-          />
-          <SettingItem
-            icon="information-circle-outline"
-            title="About MealLogger"
-            subtitle="App version and information"
-            onPress={() => setShowAbout(true)}
-          />
-        </View>
+          <View style={styles.sectionContent}>
+            <SettingRow
+              icon="help-circle-outline"
+              title="Help & Support"
+              subtitle="Get help or contact support"
+              onPress={() =>
+                Alert.alert('Help', 'Contact support at linkupcontact247@gmail.com')
+              }
+              delay={0}
+            />
+            <SettingRow
+              icon="information-circle-outline"
+              title="About MeaLogger"
+              subtitle="App version and information"
+              onPress={() => setShowAbout(true)}
+              delay={50}
+            />
+          </View>
+        </Animated.View>
 
         {/* Logout Section */}
-        <View className="mb-10">
-          <SettingItem
-            icon="log-out-outline"
-            title="Logout"
-            subtitle="Sign out of your account"
-            onPress={handleLogout}
-            showArrow={false}
-          />
-        </View>
+        <Animated.View
+          entering={FadeInDown.delay(300).duration(400).springify()}
+          style={styles.section}
+        >
+          <View style={styles.sectionContent}>
+            <SettingRow
+              icon="log-out-outline"
+              title="Logout"
+              subtitle="Sign out of your account"
+              onPress={handleLogout}
+              showArrow={false}
+              isDestructive={true}
+              delay={0}
+            />
+          </View>
+        </Animated.View>
       </ScrollView>
 
       {/* About Modal */}
       <Modal
         visible={showAbout}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowAbout(false)}
       >
-        <View
-          className="flex-1 justify-end"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-        >
-          <View
-            className="rounded-t-3xl p-6"
-            style={{
-              backgroundColor: colors.surface,
-              maxHeight: '80%',
-            }}
+        <View style={styles.modalOverlay}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setShowAbout(false)}
+          />
+          <Animated.View
+            entering={FadeInUp.duration(500)
+              .easing(Easing.out(Easing.ease))
+              .springify()}
+            style={[styles.modalContent, { backgroundColor: colors.surface }]}
           >
-            <View className="flex-row items-center justify-between mb-6">
-              <Text
-                className="text-2xl font-bold"
-                style={{ color: colors.textPrimary }}
-              >
-                About MealLogger
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowAbout(false)}
-                className="p-2"
-                activeOpacity={0.7}
-              >
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
+            {/* Gradient Header Background */}
+            <LinearGradient
+              colors={[
+                `${colors.primary}08`,
+                `${colors.accent}05`,
+                'transparent',
+              ]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.modalGradientHeader}
+            />
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Modal Header */}
+            <Animated.View
+              entering={FadeInDown.delay(100).duration(400).springify()}
+              style={styles.modalHeader}
+            >
+              <View style={styles.modalHeaderContent}>
+                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                  About
+                </Text>
+                <ModalCloseButton
+                  onPress={() => setShowAbout(false)}
+                  colors={colors}
+                />
+              </View>
+            </Animated.View>
+
+            <ScrollView
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
               {/* App Logo/Icon */}
-              <View className="items-center mb-6">
+              <Animated.View
+                entering={FadeInDown.delay(150)
+                  .duration(500)
+                  .easing(Easing.out(Easing.ease))
+                  .springify()}
+                style={styles.modalLogoContainer}
+              >
                 <View
-                  className="w-20 h-20 rounded-2xl items-center justify-center mb-4"
-                  style={{ backgroundColor: `${colors.primary}15` }}
+                  style={[
+                    styles.modalLogoWrapper,
+                    {
+                      backgroundColor: `${colors.primary}10`,
+                      shadowColor: colors.primary,
+                    },
+                  ]}
                 >
-                  <Ionicons name="restaurant-outline" size={48} color={colors.primary} />
+                  <AppLogo size={80} />
                 </View>
                 <Text
-                  className="text-3xl font-bold mb-2"
-                  style={{ color: colors.textPrimary }}
+                  style={[styles.modalAppName, { color: colors.textPrimary }]}
                 >
-                  MealLogger
+                  MeaLogger
                 </Text>
-                <Text
-                  className="text-base"
-                  style={{ color: colors.textSecondary }}
-                >
-                  Version 1.0.0
-                </Text>
-              </View>
+                <View style={styles.modalVersionContainer}>
+                  <Text
+                    style={[styles.modalVersion, { color: colors.textSecondary }]}
+                  >
+                    Version 1.0.0
+                  </Text>
+                </View>
+              </Animated.View>
 
               {/* Description */}
-              <View className="mb-6">
+              <Animated.View
+                entering={FadeInDown.delay(200)
+                  .duration(500)
+                  .easing(Easing.out(Easing.ease))
+                  .springify()}
+                style={styles.modalSection}
+              >
                 <Text
-                  className="text-base leading-6"
-                  style={{ color: colors.textPrimary }}
+                  style={[styles.modalDescription, { color: colors.textPrimary }]}
                 >
-                  MealLogger is a comprehensive meal tracking application that
-                  helps you log, organize, and monitor your daily meals. Capture
-                  photos of your meals, track calories, and maintain a detailed
-                  timeline of your eating habits.
+                  A comprehensive meal tracking application that helps you log,
+                  organize, and monitor your daily meals. Capture photos, track
+                  calories, and maintain a detailed timeline of your eating
+                  habits.
                 </Text>
-              </View>
+              </Animated.View>
 
               {/* Features */}
-              <View className="mb-6">
+              <Animated.View
+                entering={FadeInDown.delay(250)
+                  .duration(500)
+                  .easing(Easing.out(Easing.ease))
+                  .springify()}
+                style={styles.modalSection}
+              >
                 <Text
-                  className="text-lg font-semibold mb-3"
-                  style={{ color: colors.textPrimary }}
+                  style={[styles.modalSectionTitle, { color: colors.textPrimary }]}
                 >
                   Features
                 </Text>
-                <View>
+                <View style={styles.modalFeaturesList}>
                   {[
-                    { icon: 'camera-outline', text: 'Photo-based meal logging' },
+                    {
+                      icon: 'camera-outline',
+                      text: 'Photo-based meal logging',
+                    },
                     { icon: 'flame-outline', text: 'Calorie tracking' },
-                    { icon: 'calendar-outline', text: 'Meal timeline and history' },
-                    { icon: 'notifications-outline', text: 'Reminder notifications' },
+                    {
+                      icon: 'calendar-outline',
+                      text: 'Meal timeline and history',
+                    },
+                    {
+                      icon: 'notifications-outline',
+                      text: 'Reminder notifications',
+                    },
                     { icon: 'cloud-outline', text: 'Cloud sync across devices' },
                   ].map((feature, index) => (
-                    <View key={index} className="flex-row items-center mb-2">
-                      <Ionicons 
-                        name={feature.icon as any} 
-                        size={18} 
-                        color={colors.primary} 
-                        style={{ marginRight: 8 }}
-                      />
+                    <Animated.View
+                      key={index}
+                      entering={FadeInDown.delay(300 + index * 60)
+                        .duration(400)
+                        .springify()}
+                      style={[
+                        styles.modalFeatureItem,
+                        { backgroundColor: `${colors.primary}05` },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.modalFeatureIconContainer,
+                          { backgroundColor: `${colors.primary}15` },
+                        ]}
+                      >
+                        <Ionicons
+                          name={feature.icon as any}
+                          size={18}
+                          color={colors.primary}
+                        />
+                      </View>
                       <Text
-                        className="text-base"
-                        style={{ color: colors.textPrimary }}
+                        style={[styles.modalFeatureText, { color: colors.textPrimary }]}
                       >
                         {feature.text}
                       </Text>
-                    </View>
+                    </Animated.View>
                   ))}
                 </View>
-              </View>
+              </Animated.View>
 
               {/* Tech Stack */}
-              <View className="mb-6">
+              <Animated.View
+                entering={FadeInDown.delay(600)
+                  .duration(500)
+                  .easing(Easing.out(Easing.ease))
+                  .springify()}
+                style={styles.modalSection}
+              >
                 <Text
-                  className="text-lg font-semibold mb-3"
-                  style={{ color: colors.textPrimary }}
+                  style={[styles.modalSectionTitle, { color: colors.textPrimary }]}
                 >
                   Built With
                 </Text>
-                <Text
-                  className="text-base leading-6"
-                  style={{ color: colors.textSecondary }}
+                <View
+                  style={[
+                    styles.modalTechStackContainer,
+                    { backgroundColor: `${colors.primary}05` },
+                  ]}
                 >
-                  React Native • Expo • TypeScript{'\n'}
-                  Node.js • Express • MongoDB{'\n'}
-                  Cloudinary • JWT Authentication
-                </Text>
-              </View>
+                  <Text
+                    style={[styles.modalTechStack, { color: colors.textSecondary }]}
+                  >
+                    React Native • Expo • TypeScript
+                  </Text>
+                  <Text
+                    style={[styles.modalTechStack, { color: colors.textSecondary }]}
+                  >
+                    Node.js • Express • MongoDB
+                  </Text>
+                  <Text
+                    style={[styles.modalTechStack, { color: colors.textSecondary }]}
+                  >
+                    Cloudinary • JWT Authentication
+                  </Text>
+                </View>
+              </Animated.View>
 
               {/* Contact */}
-              <View className="mb-6">
+              <Animated.View
+                entering={FadeInDown.delay(650)
+                  .duration(500)
+                  .easing(Easing.out(Easing.ease))
+                  .springify()}
+                style={styles.modalSection}
+              >
                 <Text
-                  className="text-lg font-semibold mb-3"
-                  style={{ color: colors.textPrimary }}
+                  style={[styles.modalSectionTitle, { color: colors.textPrimary }]}
                 >
                   Contact & Support
                 </Text>
-                <Text
-                  className="text-base"
-                  style={{ color: colors.textSecondary }}
+                <View
+                  style={[
+                    styles.modalContactContainer,
+                    { backgroundColor: `${colors.primary}05` },
+                  ]}
                 >
-                  Email: linkupcontact247@gmail.com{'\n'}
-                  Website: www.meallogger.com
-                </Text>
-              </View>
+                  <View style={styles.modalContactRow}>
+                    <Ionicons
+                      name="mail-outline"
+                      size={16}
+                      color={colors.primary}
+                      style={styles.modalContactIcon}
+                    />
+                    <Text
+                      style={[styles.modalContact, { color: colors.textSecondary }]}
+                    >
+                      linkupcontact247@gmail.com
+                    </Text>
+                  </View>
+                  <View style={styles.modalContactRow}>
+                    <Ionicons
+                      name="globe-outline"
+                      size={16}
+                      color={colors.primary}
+                      style={styles.modalContactIcon}
+                    />
+                    <Text
+                      style={[styles.modalContact, { color: colors.textSecondary }]}
+                    >
+                      https://mealogger.vercel.app
+                    </Text>
+                  </View>
+                </View>
+              </Animated.View>
 
-              {/* Copyright */}
-              <View
-                className="items-center pt-4 border-t mb-4"
-                style={{ borderTopColor: colors.border }}
+              {/* Footer */}
+              <Animated.View
+                entering={FadeInDown.delay(700)
+                  .duration(500)
+                  .easing(Easing.out(Easing.ease))
+                  .springify()}
+                style={[styles.modalFooter, { borderTopColor: colors.border }]}
               >
                 <Text
-                  className="text-sm"
-                  style={{ color: colors.textSecondary }}
+                  style={[styles.modalMadeWith, { color: colors.textSecondary }]}
                 >
-                  © 2025 MealLogger. All rights reserved.
+                  Made with <Text style={{ color: colors.error }}>❤️</Text>
                 </Text>
-              </View>
+                <Text
+                  style={[styles.modalCopyrightText, { color: colors.textSecondary }]}
+                >
+                  © 2025 MeaLogger. All rights reserved.
+                </Text>
+              </Animated.View>
             </ScrollView>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 15,
+    fontWeight: '400',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  sectionContent: {
+    gap: 0,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  modalContent: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '90%',
+    minHeight: 600,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 20,
+    flexDirection: 'column',
+    backgroundColor: '#FFFFFF',
+  },
+  modalGradientHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+    zIndex: 0,
+  },
+  modalHeader: {
+    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 8,
+    zIndex: 1,
+  },
+  modalHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseButtonInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalScrollView: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    flexGrow: 1,
+  },
+  modalLogoContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+    marginTop: 8,
+  },
+  modalLogoWrapper: {
+    width: 120,
+    height: 120,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalAppName: {
+    fontSize: 32,
+    fontWeight: '700',
+    marginBottom: 8,
+    letterSpacing: -0.5,
+  },
+  modalVersionContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+  },
+  modalVersion: {
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: 0.3,
+  },
+  modalSection: {
+    marginBottom: 28,
+  },
+  modalDescription: {
+    fontSize: 16,
+    lineHeight: 26,
+    fontWeight: '400',
+    letterSpacing: 0.1,
+  },
+  modalSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+    letterSpacing: -0.3,
+  },
+  modalFeaturesList: {
+    gap: 10,
+  },
+  modalFeatureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+  },
+  modalFeatureIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  modalFeatureText: {
+    fontSize: 15,
+    fontWeight: '500',
+    flex: 1,
+    letterSpacing: 0.1,
+  },
+  modalTechStackContainer: {
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    gap: 8,
+  },
+  modalTechStack: {
+    fontSize: 14,
+    lineHeight: 22,
+    fontWeight: '400',
+    letterSpacing: 0.2,
+  },
+  modalContactContainer: {
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    gap: 12,
+  },
+  modalContactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  modalContactIcon: {
+    marginRight: 12,
+  },
+  modalContact: {
+    fontSize: 14,
+    lineHeight: 22,
+    fontWeight: '400',
+    letterSpacing: 0.2,
+    flex: 1,
+  },
+  modalFooter: {
+    paddingTop: 28,
+    marginTop: 12,
+    borderTopWidth: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalMadeWith: {
+    fontSize: 14,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+  modalCopyrightText: {
+    fontSize: 12,
+    fontWeight: '400',
+    letterSpacing: 0.2,
+  },
+});
 
 export default SettingsScreen;

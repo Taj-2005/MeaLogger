@@ -16,14 +16,14 @@ const features = [
     icon: Zap,
     title: "The Solution",
     description:
-      "MealLogger makes meal tracking effortless. Simply snap a photo of your meal, and the app automatically logs it with timestamps. No manual entry, no complexity—just quick photo captures.",
+      "MeaLogger makes meal tracking effortless. Simply snap a photo of your meal, and the app automatically logs it with timestamps. No manual entry, no complexity—just quick photo captures.",
     color: "from-blue-500 to-cyan-500",
   },
   {
     icon: Shield,
     title: "Why It Works",
     description:
-      "Photo-based logging is faster and more accurate than typing. Combined with smart reminders, streak tracking, and a beautiful timeline, MealLogger helps you build consistent habits naturally.",
+      "Photo-based logging is faster and more accurate than typing. Combined with smart reminders, streak tracking, and a beautiful timeline, MeaLogger helps you build consistent habits naturally.",
     color: "from-purple-500 to-pink-500",
   },
   {
@@ -48,7 +48,7 @@ export default function AboutSection() {
         >
           <motion.div variants={fadeInUp} className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-              Why MealLogger?
+              Why MeaLogger?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               A modern approach to meal tracking that actually works

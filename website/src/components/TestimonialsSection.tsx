@@ -9,14 +9,14 @@ const testimonials = [
     name: "Sarah Chen",
     role: "Health Enthusiast",
     content:
-      "MealLogger has completely changed how I track my meals. The photo-based logging is so quick, and I love seeing my streak grow every day!",
+      "MeaLogger has completely changed how I track my meals. The photo-based logging is so quick, and I love seeing my streak grow every day!",
     rating: 5,
   },
   {
     name: "Michael Rodriguez",
     role: "Fitness Coach",
     content:
-      "As someone who needs to track meals for my clients, MealLogger's simplicity and cloud sync make it perfect. I can access everything from any device, and I never lose my data.",
+      "As someone who needs to track meals for my clients, MeaLogger's simplicity and cloud sync make it perfect. I can access everything from any device, and I never lose my data.",
     rating: 5,
   },
   {
@@ -44,7 +44,7 @@ export default function TestimonialsSection() {
               Loved by Users
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              See what people are saying about MealLogger
+              See what people are saying about MeaLogger
             </p>
           </motion.div>
 

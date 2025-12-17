@@ -20,12 +20,12 @@ export default function Footer() {
               <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-3">
                 <Image
                   src="/logo.png"
-                  alt="MealLogger Logo"
+                  alt="MeaLogger Logo"
                   width={32}
                   height={32}
                   className="rounded-full"
                 />
-                MealLogger
+                MeaLogger
               </h3>
               <p className="text-gray-400">
                 Track your meals effortlessly with photo-based logging and smart
@@ -66,7 +66,7 @@ export default function Footer() {
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
             <p>
-              © {new Date().getFullYear()} MealLogger. All rights reserved.
+              © {new Date().getFullYear()} MeaLogger. All rights reserved.
             </p>
           </div>
         </motion.div>
