@@ -93,7 +93,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
 
   if (variant === 'minimal') {
     return (
-      <Animated.View style={[styles.container, containerStyle]}>
+      <Animated.View style={[styles.container, { backgroundColor: colors.background }, containerStyle]}>
         <View style={styles.minimalContent}>
           <AnimatedLoader colors={colors} />
           {message && (
@@ -107,7 +107,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   }
 
   return (
-    <Animated.View style={[styles.container, containerStyle]}>
+    <Animated.View style={[styles.container, { backgroundColor: colors.background }, containerStyle]}>
       <LinearGradient
         colors={[
           colors.background,
